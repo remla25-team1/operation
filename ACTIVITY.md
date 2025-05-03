@@ -1,26 +1,30 @@
 # A1:
 
--- Anna: --
+### -- Anna: --
 Created PR:
+
 Approved PR: 
 
--- Sofia: --
+### -- Sofia: --
 Created PR: ...
+
 Approved PR: ...
 
--- Vivian: --
+### -- Vivian: --
 Created PR: https://github.com/remla25-team1/lib-ml/pull/1
 
-Created PR: https://github.com/remla25-team1/model-training/pulls
+Created PR: https://github.com/remla25-team1/model-training/pull/1
 
 Approved PR: ...
 
--- Yifan: --
+### -- Yifan: --
 Created PR: ...
+
 Approved PR: ...
 
--- Zuji: --
+### -- Zuji: --
 Created PR: ...
+
 Approved PR: ...
 
 # A2:
