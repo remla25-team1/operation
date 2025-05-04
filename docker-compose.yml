@@ -6,7 +6,7 @@ services:
     ports:
       - "8080:8080"
     environment:
-      - MODEL_SERVICE_URL=http://model-service:8080/predict
+      - MODEL_SERVICE_URL=http://model-service:8080
     networks:
       - app-network
 
