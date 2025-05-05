@@ -6,9 +6,9 @@ Created PR:
 Approved PR: 
 
 ### -- Sofia: --
-Created PR: ...
+Created PR: https://github.com/remla25-team1/model-service/pull/1
 
-Approved PR: ...
+Approved PR: https://github.com/remla25-team1/app/pull/1
 
 ### -- Vivian: --
 Created PR: https://github.com/remla25-team1/lib-ml/pull/1
