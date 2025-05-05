@@ -15,7 +15,7 @@ Created PR: https://github.com/remla25-team1/lib-ml/pull/1
 
 Created PR: https://github.com/remla25-team1/model-training/pull/1
 
-Approved PR: ...
+Approved PR: https://github.com/remla25-team1/model-service/pull/1
 
 ### -- Yifan: --
 Created PR: ...
