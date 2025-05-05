@@ -1,9 +1,9 @@
 # A1:
 
 ### -- Anna: --
-Created PR:
+Created PR: https://github.com/remla25-team1/lib-version/pull/1
 
-Approved PR: 
+Approved PR: https://github.com/remla25-team1/operation/pull/1
 
 ### -- Sofia: --
 Created PR: https://github.com/remla25-team1/model-service/pull/1
