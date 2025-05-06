@@ -21,5 +21,4 @@ What can be reviewed:
 - All repos. Though some functionality might be missing for some of them. 
 
 What can not be reviewed:
-- We did not release the lib-version correctly. Hence, the app version is hardcoded in the FE (in the app repo).
 - We did not manage to version the containers automatically. As of now we have to provide a git tag manually to trigger the workflow. 
