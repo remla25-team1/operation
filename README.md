@@ -35,6 +35,11 @@ Once the containers are running, open your browser and visit http://localhost:80
 
 [Original tweet available here](https://x.com/TinuKuye/status/1719440898696630564)
 
+### Provide correction if you think the prediction is wrong
+![alt text](cases/correction.png)
+
+[Original tweet available here](https://x.com/TinuKuye/status/1719440898696630564)
+
 
 ## Related Repositories
 
