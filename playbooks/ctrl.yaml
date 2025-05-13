@@ -3,6 +3,7 @@
   # connection: local
   become: yes
   tasks:
+    # Step 7 starts here
     - name: Load kernel modules
       modprobe:
         name: "{{ item }}"
@@ -44,6 +45,7 @@
         value: '1'
         state: present
         reload: yes
+    # step 7 ends here
 
     - name: Initialize Kubernetes control plane
       command: >
