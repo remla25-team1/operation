@@ -1,5 +1,6 @@
 
 Vagrant.configure("2") do |config|
+
     workers_count = 2
     ctrl_cpus = 2
     ctrl_mem = 2048
@@ -10,7 +11,42 @@ Vagrant.configure("2") do |config|
   
     cluster_network = "192.168.57"
 
-    # Controller VM
+    config.ssh.insert_key = false
+    
+    config.ssh.private_key_path = [
+      File.expand_path("ssh/vagrant_rsa", __dir__),
+      File.expand_path("~/.vagrant.d/insecure_private_key")
+    ]
+
+    config.ssh.keys_only = false
+  
+    config.vm.network "forwarded_port",
+                      guest: 22,
+                      host: 2222,
+                      id:   "ssh",
+                      auto_correct: true
+  
+    config.vm.provision "file" do |f|
+      f.source      = File.expand_path("ssh/vagrant_rsa.pub", __dir__)
+      f.destination = "/tmp/vagrant.pub"
+    end
+  
+    config.vm.provision "shell", inline: <<-SHELL
+      mkdir -p /home/vagrant/.ssh
+      chmod 700 /home/vagrant/.ssh
+  
+      if [ -f /tmp/vagrant.pub ]; then
+        cat /tmp/vagrant.pub >> /home/vagrant/.ssh/authorized_keys
+      else
+        echo "ERROR: /tmp/vagrant.pub not found"
+        exit 1
+      fi
+      chmod 600 /home/vagrant/.ssh/authorized_keys
+      chown -R vagrant:vagrant /home/vagrant/.ssh
+  
+      sudo systemctl restart ssh
+    SHELL
+    
     config.vm.define "ctrl" do |ctrl|
       ctrl.vm.hostname = "k8s-ctrl"
       ctrl.vm.provider "virtualbox" do |vb|
