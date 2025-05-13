@@ -1,0 +1,12 @@
+# playbooks/node.yaml
+- hosts: all
+  become: yes
+  tasks:
+    - name: Get join command from controller
+      ansible.builtin.shell: |
+        ssh -o StrictHostKeyChecking=no vagrant@192.168.57.100 "cat /home/vagrant/join-command.sh"
+      register: join_cmd
+
+    - name: Join node to cluster
+      ansible.builtin.shell: |
+        {{ join_cmd.stdout }} --ignore-preflight-errors=all
