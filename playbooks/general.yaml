@@ -74,3 +74,79 @@
         marker: "# {mark} K8S CLUSTER ENTRIES - ANSIBLE MANAGED"
         insertafter: "^127.0.0.1"
         backup: yes
+
+    # Add kubernetes repository
+    - name: Add Kubernetes GPG key
+      ansible.builtin.apt_key:
+        url: https://pkgs.k8s.io/core:/stable:/v1.29/deb/Release.key
+        keyring: /usr/share/keyrings/kubernetes-archive-keyring.gpg
+        state: present
+
+    - name: Add Kubernetes apt repo
+      ansible.builtin.apt_repository:
+        repo: "deb [signed-by=/usr/share/keyrings/kubernetes-archive-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v1.29/deb/ /"
+        state: present
+        filename: kubernetes
+        update_cache: yes
+
+    - name: Update apt cache
+      ansible.builtin.apt:
+        update_cache: yes
+
+    # Install K8s tools (did not manage to specify specific versions)
+    - name: Install kubelet, kubeadm and kubectl
+      ansible.builtin.apt:
+        name:
+          - containerd #=1.7.24-1
+          - runc #=1.1.12-0ubuntu1
+          - kubelet #=1.32.4-00
+          - kubeadm #=1.32.4-00
+          - kubectl #=1.32.4-00
+        state: present
+        update_cache: yes
+
+    # Configure Containerd
+    - name: Ensure /etc/containerd directory exists
+      ansible.builtin.file:
+        path: /etc/containerd
+        state: directory
+        mode: "0755"
+
+    - name: Generate default containerd config
+      ansible.builtin.shell: >
+        containerd config default > /etc/containerd/config.toml
+      args:
+        creates: /etc/containerd/config.toml
+
+    - name: Disable AppArmor
+      ansible.builtin.lineinfile:
+        path: /etc/containerd/config.toml
+        regexp: '^\s*disable_apparmor\s*=.*'
+        line: "    disable_apparmor = true"
+        backrefs: false
+
+    - name: Update version of the sandbox image
+      ansible.builtin.lineinfile:
+        path: /etc/containerd/config.toml
+        regexp: '^\s*sandbox_image\s*=.*'
+        line: '    sandbox_image = "registry.k8s.io/pause:3.10"'
+        backrefs: false
+
+    - name: Enable SystemdCgroup
+      ansible.builtin.lineinfile:
+        path: /etc/containerd/config.toml
+        regexp: '^\s*SystemdCgroup\s*=.*'
+        line: "      SystemdCgroup = true"
+        backrefs: false
+
+    - name: Start service httpd, if not started
+      ansible.builtin.service:
+        name: containerd
+        state: restarted
+
+    # Kubelet
+    - name: Start and enable kubelet service on all nodes
+      ansible.builtin.service:
+        name: kubelet
+        state: started
+        enabled: yes
