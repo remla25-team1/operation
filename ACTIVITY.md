@@ -40,7 +40,7 @@ Created PR: https://github.com/remla25-team1/operation/pull/3
 Approved PR: https://github.com/remla25-team1/operation/pull/2
 
 ### -- Vivian: --
-Created PR: 
+Created PR: https://github.com/remla25-team1/model-training/pull/2
 
 Approved PR: 
 
