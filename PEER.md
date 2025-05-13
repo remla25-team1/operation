@@ -13,6 +13,9 @@ app: https://github.com/remla25-team1/app
 lib-version: https://github.com/remla25-team1/lib-version
 
 
+## Comments for A2:
+All steps work locally. Navigate into the ```operation``` directory and run ```vagrant up``` in the terminal (ensure VirtualBox is installed.) Logs of the setup will appear in the terminal. When done, run ```vagrant destroy`` for cleanup.
+
 ## Comments for A1:
 
 Git tags to be reviewed are marked with __a1__
@@ -22,3 +25,4 @@ What can be reviewed:
 
 What can not be reviewed:
 - We did not manage to version the containers automatically. As of now we have to provide a git tag manually to trigger the workflow. 
+
