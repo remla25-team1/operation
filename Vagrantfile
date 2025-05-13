@@ -36,13 +36,11 @@ Vagrant.configure("2") do |config|
       cluster_network: cluster_network,
       ctrl_ip: "#{cluster_network}.100"
     }
-
     ctrl.vm.provision "ansible_local" do |ansible|
       ansible.compatibility_mode = "2.0"
       ansible.playbook = "playbooks/general.yaml"
       ansible.extra_vars = ctrl_extra_vars
     end
-
     ctrl.vm.provision "ansible_local" do |ansible|
       ansible.compatibility_mode = "2.0"
       ansible.playbook = "playbooks/ctrl.yaml"
@@ -68,21 +66,20 @@ Vagrant.configure("2") do |config|
         adapter:           2
 
       # Provision with Ansible
+      worker_extra_vars = {           
+        worker_count: NUM_WORKERS,
+        cluster_network: cluster_network,
+        ctrl_ip: "#{cluster_network}.#{100 + i}" 
+      }
       node.vm.provision "ansible_local" do |ansible|
         ansible.compatibility_mode = "2.0"
         ansible.playbook = "playbooks/general.yaml"
-        ansible.extra_vars = {           
-          worker_count: NUM_WORKERS,
-          cluster_network: cluster_network,
-          ctrl_ip: "#{cluster_network}.#{100 + i}" 
-        }
+        ansible.extra_vars = worker_extra_vars
       end
       node.vm.provision "ansible_local" do |ansible|
         ansible.compatibility_mode = "2.0"
         ansible.playbook = "playbooks/node.yaml"
-        ansible.extra_vars = ansible.extra_vars = {           
-          controller: 'ctrl'
-        }
+        ansible.extra_vars = worker_extra_vars
       end
     end
   end
