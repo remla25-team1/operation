@@ -24,6 +24,8 @@ Vagrant.configure("2") do |config|
       vb.cpus   = CTRL_CPUS
     end
 
+    ctrl.vm.synced_folder "./shared", "/vagrant_shared", create: true
+
     # Networking
     ctrl.vm.network "private_network",
       ip:                "#{cluster_network}.100",
@@ -46,7 +48,6 @@ Vagrant.configure("2") do |config|
       ansible.playbook = "playbooks/ctrl.yaml"
       ansible.extra_vars = ctrl_extra_vars
     end
-
   end
 
   # Defining the worker nodes
@@ -83,5 +84,4 @@ Vagrant.configure("2") do |config|
       end
     end
   end
-
 end
