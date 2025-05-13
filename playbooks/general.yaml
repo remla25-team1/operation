@@ -1,55 +1,64 @@
-# playbooks/general.yaml
 - hosts: all
   connection: local
   become: yes
   tasks:
-    - name: Update apt cache
-      apt:
-        update_cache: yes
+    # Registering SSH keys
+    - name: Ensure .ssh exists
+      file:
+        path: /home/vagrant/.ssh
+        state: directory
+        owner: vagrant
+        group: vagrant
+        mode: "0700"
 
-    - name: Install dependencies
-      apt:
-        name:
-          - apt-transport-https
-          - ca-certificates
-          - curl
-          - gnupg
-          - lsb-release
+    - name: Register all team SSH keys
+      ansible.posix.authorized_key:
+        user: vagrant
+        key: "{{ lookup('file', item) }}"
         state: present
+      loop: "{{ lookup('fileglob', '/vagrant/ssh_keys/*.pub', wantlist=True) }}"
 
-    - name: Add Kubernetes GPG key
-      ansible.builtin.apt_key:
-        url: https://pkgs.k8s.io/core:/stable:/v1.29/deb/Release.key
-        keyring: /usr/share/keyrings/kubernetes-archive-keyring.gpg
-        state: present
+    # Disable SWAP
+    - name: Disable SWAP
+      ansible.builtin.shell: swapoff -a
 
-    - name: Add Kubernetes apt repo
-      apt_repository:
-        repo: "deb [signed-by=/usr/share/keyrings/kubernetes-archive-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v1.29/deb/ /"
-        state: present
-        update_cache: yes
-        filename: kubernetes
-
-    # step 10
-    - name: Install kubelet, kubeadm and kubectl, kubeadm and kubectl
-      apt:
-        name:
-          - kubelet
-          - kubeadm
-          - kubectl
-        state: present
-        update_cache: yes
-
-    # step 5
-    - name: Disable swap
-      shell: swapoff -a
-
-    - name: Ensure swap is disabled in fstab
-      replace:
+    - name: Remove the swap entry from the /etc/fstab
+      ansible.builtin.lineinfile:
         path: /etc/fstab
-        regexp: '^(.*swap.*)$'
-        replace: '# \1'
+        regexp: "^(.*swap.*)$"
+        line: '# \1'
+        backrefs: yes
 
+    # br_netfilter
+    - name: Persist kernel modules
+      ansible.builtin.copy:
+        content: |
+          br_netfilter
+          overlay
+        dest: /etc/modules-load.d/k8s.conf
+        mode: "0644"
+
+    - name: Automatically load the kernel modules
+      community.general.modprobe:
+        name: "{{ item }}"
+        state: present
+      loop:
+        - br_netfilter
+        - overlay
+
+    # Enable IPv4 forwarding
+    - name: Enable IP forwarding and bridge settings
+      ansible.posix.sysctl:
+        name: "{{ item }}"
+        value: "1"
+        state: present
+        reload: yes
+      loop:
+        - net.ipv4.ip_forward
+        - net.bridge.bridge-nf-call-iptables
+        - net.bridge.bridge-nf-call-ip6tables
+
+    # Manage /etc/hosts
     - name: Generate cluster hosts entries
       set_fact:
         cluster_hosts: |
@@ -59,7 +68,7 @@
           {% endfor %}
 
     - name: Update /etc/hosts
-      blockinfile:
+      ansible.builtin.blockinfile:
         path: /etc/hosts
         block: "{{ cluster_hosts }}"
         marker: "# {mark} K8S CLUSTER ENTRIES - ANSIBLE MANAGED"
