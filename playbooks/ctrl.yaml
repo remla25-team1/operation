@@ -3,6 +3,8 @@
   # connection: local
   become: yes
   tasks:
+
+
     # Step 7 starts here
     - name: Load kernel modules
       modprobe:
