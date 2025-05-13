@@ -2,11 +2,46 @@
 - hosts: all
   become: yes
   tasks:
-    - name: Get join command from controller
-      ansible.builtin.shell: |
-        ssh -o StrictHostKeyChecking=no vagrant@192.168.57.100 "cat /home/vagrant/join-command.sh"
-      register: join_cmd
+    # Step 7 starts here
+    - name: Load kernel modules
+      modprobe:
+        name: "{{ item }}"
+        state: present
+      loop:
+        - br_netfilter
+        - overlay
+    
+    - name: Persist kernel modules
+      copy:
+        content: |
+          br_netfilter
+          overlay
+        dest: /etc/modules-load.d/k8s.conf
+        mode: 0644
 
-    - name: Join node to cluster
-      ansible.builtin.shell: |
-        {{ join_cmd.stdout }} --ignore-preflight-errors=all
+    - name: Set bridge-nf-call-iptables
+      sysctl:
+        name: net.bridge.bridge-nf-call-iptables
+        value: '1'
+        state: present
+        reload: yes
+
+    - name: Install containerd
+      apt:
+        name: containerd
+        state: present
+        update_cache: yes
+
+    - name: Enable containerd service
+      systemd:
+        name: containerd
+        enabled: yes
+        state: started
+
+    - name: Enable IP forwarding
+      sysctl:
+        name: net.ipv4.ip_forward
+        value: '1'
+        state: present
+        reload: yes
+    # Step 7 ends here

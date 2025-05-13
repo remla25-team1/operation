@@ -8,6 +8,8 @@ Vagrant.configure("2") do |config|
   
     config.vm.box = "bento/ubuntu-24.04"
   
+    cluster_network = "192.168.57"
+
     # Controller VM
     config.vm.define "ctrl" do |ctrl|
       ctrl.vm.hostname = "k8s-ctrl"
@@ -17,8 +19,9 @@ Vagrant.configure("2") do |config|
         vb.cpus   = ctrl_cpus
       end
   
+      # Step 2
       ctrl.vm.network "private_network",
-        ip:                "192.168.57.100",
+        ip:                "#{cluster_network}.100",
         adapter:           2
 
       # Ansible inside VM
@@ -27,8 +30,8 @@ Vagrant.configure("2") do |config|
         ansible.extra_vars = { 
           target: 'ctrl',
           worker_count: workers_count,
-          cluster_network: "192.168.56",
-          ctrl_ip: "192.168.56.100"
+          cluster_network: cluster_network,
+          ctrl_ip: "#{cluster_network}.100"
         }
       end
       ctrl.vm.provision "ansible_local" do |ansible|
@@ -46,9 +49,10 @@ Vagrant.configure("2") do |config|
           vb.memory = worker_mem
           vb.cpus   = worker_cpus
         end
-  
+        
+        # Step 2
         node.vm.network "private_network",
-          ip:                "192.168.57.#{100 + i}",
+          ip:                "#{cluster_network}.#{100 + i}",
           adapter:           2
 
         # Ansible inside VM
@@ -61,8 +65,8 @@ Vagrant.configure("2") do |config|
           ansible.extra_vars = { 
             join_command: "$JOIN_CMD",
             worker_count: workers_count,
-            cluster_network: "192.168.56",
-            ctrl_ip: "192.168.56.100"
+            cluster_network: cluster_network,
+            ctrl_ip: "#{cluster_network}.#{100 + i}"
           }
         end
       end
