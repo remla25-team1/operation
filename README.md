@@ -17,7 +17,7 @@ From the root of the `operation` repository, simply start all services in Docker
 
    ```bash
    cd operation
-   docker-compose up --build
+   docker compose up --build
    ```
 
 Once the containers are running, open your browser and visit http://localhost:8080 to access the application.
