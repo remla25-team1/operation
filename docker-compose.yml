@@ -6,10 +6,10 @@ services:
     ports:
       - "${APP_SERVICE_PORT}:${CONTAINER_PORT}"
     environment:
-      - MODEL_SERVICE_HOST= ${MODEL_SERVICE_HOST}
-      - MODEL_SERVICE_PORT = ${MODEL_SERVICE_PORT}
+      - MODEL_SERVICE_HOST=${MODEL_SERVICE_HOST}
       - APP_VERSION=${APP_SERVICE_VERSION}
       - MODEL_SERVICE_VERSION=${MODEL_SERVICE_VERSION}
+      - MODEL_SERVICE_PORT=${MODEL_SERVICE_PORT}
       - PORT=${CONTAINER_PORT}
     restart: always
     volumes:
@@ -18,9 +18,10 @@ services:
       - app-network
 
   model-service:
-    image: ${MODEL_SERVICE_IMAGE}:${MODEL_SERVICE_VERSION}
+    build:
+      context: ../model-service
     ports:
-      - "${MODEL_SERVICE_PORT}:{CONTAINER_PORT}"
+      - "${MODEL_SERVICE_PORT}:${CONTAINER_PORT}"
     environment:
       - PORT=${CONTAINER_PORT}
       - HOST=0.0.0.0
