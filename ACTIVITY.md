@@ -41,8 +41,10 @@ Approved PR: https://github.com/remla25-team1/operation/pull/2
 
 ### -- Vivian: --
 Created PR: https://github.com/remla25-team1/model-training/pull/2
+Created PR: https://github.com/remla25-team1/model-training/pull/3
 
-Approved PR: 
+Approved PR: https://github.com/remla25-team1/app/pull/4 
+Approved PR: https://github.com/remla25-team1/model-service/pull/3
 
 ### -- Yifan: --
 Created PR:
