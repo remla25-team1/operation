@@ -44,6 +44,8 @@ Created PR: https://github.com/remla25-team1/model-training/pull/2
 
 Created PR: https://github.com/remla25-team1/model-training/pull/3
 
+Created PR: https://github.com/remla25-team1/model-training/pull/4
+
 Approved PR: https://github.com/remla25-team1/app/pull/4 
 
 Approved PR: https://github.com/remla25-team1/model-service/pull/3
