@@ -1,6 +1,6 @@
 # Project Overview
 
-This repository contains a modular comment sentiment analysis system, organized into six individual repositories under the `remla25-team1` organization:
+This repository contains a modular tweet sentiment analysis system, organized into six individual repositories under the `remla25-team1` organization:
 
 * **app**: Front-end application and API gateway responsible for serving pages and forwarding model inference requests.
 * **model-service**: Microservice for handling sentiment classification requests, interfacing with the preprocessing library and the trained model.
@@ -13,17 +13,41 @@ Each component can be developed, tested, and deployed independently, yet they fo
 
 ## Install & Run
 
-From the root of the `operation` repository, simply start all services in Docker containers:
+Make sure you have **Docker** and **Docker Compose** installed:  
+[Install Docker & Docker Compose](https://docs.docker.com/compose/install/)
+
+### 1. Clone the Repository
+
+Clone the **operation** repository from GitHub (e.g., using SSH):
 
    ```bash
+   git clone git@github.com:remla25-team1/operation.git
    cd operation
-   docker compose up --build
    ```
 
-Once the containers are running, open your browser and visit http://localhost:8080 to access the application.
+### 2. Start the Services
+From the root of the **operation** repository, build and start all services using Docker Compose:
+
+   ```bash
+   docker compose up --build
+   # or, if using the older syntax:
+   docker-compose up --build
+   ```
+
+Once the containers are running, open your browser and go to [http://localhost:8080](http://localhost:8080) to access the application.
 
 
-## Use-Case
+### 3. Stop and Clean Up
+
+   ```bash
+   docker compose down
+   # or
+   docker-compose down
+   ```
+
+## Use-Case: Tweet Sentiment Analysis
+
+Our application features a simple interface where users can enter a tweet to analyze its sentiment. When submitted, the backend runs a sentiment analysis model and displays the predicted sentiment. The user then sees whether the tweet is positive or negative, and can confirm or correct this prediction. This feedback helps improve the model and makes the app more interactive and accurate over time.
 
 ### Negative Comment
 ![alt text](cases/negative.png)
@@ -35,7 +59,7 @@ Once the containers are running, open your browser and visit http://localhost:80
 
 [Original tweet available here](https://x.com/TinuKuye/status/1719440898696630564)
 
-### Provide correction if you think the prediction is wrong
+### Correct Predictions
 ![alt text](cases/correction.png)
 
 [Original tweet available here](https://x.com/TinuKuye/status/1719440898696630564)
