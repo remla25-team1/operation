@@ -14,6 +14,7 @@ lib-version: https://github.com/remla25-team1/lib-version
 
 
 ## Comments for A2:
+
 All steps work locally. Navigate into the ```operation``` directory and run ```vagrant up``` in the terminal (ensure VirtualBox is installed.) Logs of the setup will appear in the terminal. When done, run ```vagrant destroy`` for cleanup.
 
 ## Comments for A1:
