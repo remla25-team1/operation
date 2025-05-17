@@ -1,61 +1,136 @@
-```bash
-vagrant ssh ctrl
+# Kubernetes SSH & Join‑Command Fix
 
-ls -l /etc/kubernetes/admin.conf
+## Problem
 
-sudo kubeadm token create --print-join-command --kubeconfig /etc/kubernetes/admin.conf # copy this output
+When booting our Vagrant‑based Kubernetes cluster, the controller (`ctrl`) and worker nodes (`node‑1`, `node‑2`) come up fine, but the worker playbook (`node.yaml`) fails at the “generate join command” task:
 
-kubectl get nodes
+```text
+TASK [Generate kubeadm join command on controller] …
+fatal: … Failed to connect to the host via ssh: … Permission denied (publickey,password).
 ```
 
-```bash
-vagrant ssh node-1
+Two root causes:
 
-sudo <copied-output> # something like sudo kubeadm join 192.168.57.100:6443 --token x7zxvv.bensccr0y4e6ghf6 --discovery-token-ca-cert-hash sha256:8ee476c1d992f8f2ad76f194061747c4e0057f9127d212ee6b61eb2fe840cf53 
+1. **SSH‑chaining**: `delegate_to: ctrl` makes Ansible SSH **from** the worker back **to** the controller—but the worker doesn’t yet have the controller’s private key.
+2. **Per‑VM provisioning**: Vagrant runs each playbook with `--limit <this‑vm>`, so a controller‑only play is skipped entirely on workers, leaving no `join_cmd` in `hostvars`.
+
+---
+
+## Solution: Shared “join” Script in `/vagrant`
+
+### 1. Controller playbook (`playbooks/ctrl.yaml`)
+
+After `kubeadm init` and kubeconfig setup, I **add** these two tasks (under the same play):
+
+```yaml
+    - name: Generate kubeadm join command
+      ansible.builtin.command: kubeadm token create --print-join-command
+      register: join_cmd
+
+    - name: Write join script into the shared folder
+      ansible.builtin.copy:
+        dest: /vagrant/join_cluster.sh
+        mode: "0755"
+        content: |
+          #!/usr/bin/env bash
+          {{ join_cmd.stdout }} --cri-socket /run/containerd/containerd.sock
 ```
 
-Maybe we can turn this fix into Ansible playbook task? Problem is the delegate:ctrl will do ssh from terminal of host and that somehow is not working for me
+- `/vagrant` is a synced folder on **all** VMs (and on the host).
+- The controller writes `join_cluster.sh` exactly once.
 
-```bash
-cd .ssh
-cat authorized_keys
+### 2. Worker playbook (`playbooks/node.yaml`)
+
+Replace any `delegate_to` or hostvars logic with a simple script invocation:
+
+```yaml
+- hosts: node-1:node-2
+  become: true
+  tasks:
+    - name: Join this node to the Kubernetes cluster
+      ansible.builtin.command: bash /vagrant/join_cluster.sh
+      args:
+        creates: /etc/kubernetes/kubelet.conf
 ```
 
-I see my public key here. But doing this is not working:
-```
-ssh vagrant@192.168.56.100
-Enter passphrase for key '/Users/annavisman/.ssh/id_ed25519': 
-vagrant@192.168.56.100's password: 
-Permission denied, please try again.
-vagrant@192.168.56.100's password: 
-Permission denied, please try again.
-vagrant@192.168.56.100's password: 
-vagrant@192.168.56.100: Permission denied (publickey,password).
-```
-I did not set a password for my public key, should I?
+- No SSH chaining.
+- Vagrant runs this play per‑VM; each worker sees the same `/vagrant/join_cluster.sh`.
 
+---
 
-Fixed the public key ssh things.
-Generated a new key pair
-Copied public key to project in ssh_keys folder
-Checked if they were transfered to each VM
+## Prepare & run the cluster
 
-Made changes to inventory, Vagrantfile, commented out connection:local from playbooks
+### 1. SSH Key Setup
 
-Changed ansible_local to ansible. 
+1. Generate a **password‑less** keypair on your host (only once):
 
-With ansible (regular):
-The playbooks are run from your host machine.
-Ansible connects to each VM over SSH and executes the tasks on the VMs (not on your host).
-The only exception is if you use delegate_to: localhost or delegate_to: <some other host>, which runs that specific task elsewhere.
-Ansible will run from your host machine.
-It will connect to each VM over SSH using the inventory at shared/inventory.ini.
-All playbooks and tasks will be executed on the VMs, not on your host.
-Ansible cannot connect to each VM before the SSH keys are injected by your playbook.
-Ansible needs to establish an SSH connection to the VM before it can run any playbook tasks—including those that set up or inject SSH keys.
+   ```bash
+   ssh-keygen -t ed25519 -f ~/.ssh/id_ed25519 -N ""
+   ```
 
-How it works:
+2. **Copy** your public key into the project’s `ssh_keys/` folder:
 
-Vagrant automatically sets up the vagrant user with a default insecure private key (~/.vagrant.d/insecure_private_key) for initial SSH access.
-Ansible uses this key (or another you specify in your inventory) to connect to the VMs.
-Only after connecting can Ansible run tasks to add or change SSH keys.
+   ```bash
+   cp ~/.ssh/id_ed25519.pub ssh_keys/yourname.pub
+   ```
+
+### 3.2. Provisioning with Vagrant + Ansible
+
+1. **Install Ansible** on your host:
+
+   ```bash
+   pip install --user ansible
+   ```
+
+2. **Boot & provision** all VMs:
+
+   ```bash
+   vagrant up
+   ```
+
+   Vagrant will, for each VM in turn:
+
+   - SSH in with the default insecure key
+   - Run `playbooks/general.yaml` → common OS setup
+   - Run `playbooks/ctrl.yaml` on `ctrl`
+   - Run `playbooks/node.yaml` on each worker
+
+3. **Verify**:
+
+   ```bash
+   vagrant ssh ctrl
+   kubectl get nodes
+   ```
+    You should see `ctrl`, `node-1`, and `node-2` all `Ready`. **Verify** your key is deployed into each VM’s `~/.ssh/authorized_keys`:
+
+   ```bash
+   vagrant ssh ctrl 
+   cd .ssh
+   cat authorized_keys
+   ```
+
+   You can now SSH into the cluster nodes from your host with ```ssh vagrant@192.168.56.100``` (for ```ctrl``` node).
+
+---
+
+## Explanation
+
+- No cross‑node SSH*: Every Ansible session is from the host into each VM.
+- Shared state: The join command is exported once to `/vagrant`, then consumed locally on each worker.
+
+---
+
+## Troubleshooting
+
+- **“Permission denied (publickey)”**  
+  Ensure your new public key is in `ssh_keys/*.pub` and the `authorized_key` Ansible task has run (check `~/.ssh/authorized_keys` inside each VM).
+
+- **`/vagrant/join_cluster.sh` missing**  
+  Rerun the controller play:
+  ```bash
+  vagrant provision ctrl --provision-with ansible
+  ls -l /vagrant/join_cluster.sh
+  ```
+
+- **Re‑joining**  
+  If a worker already joined, delete or move `/etc/kubernetes/kubelet.conf` inside the worker VM before reprovisioning.
