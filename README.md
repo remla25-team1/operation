@@ -45,6 +45,114 @@ Once the containers are running, open your browser and go to [http://localhost:8
    docker-compose down
    ```
 
+## Running Kubernetes Cluster
+Navigate into ```operation``` dir and run:
+
+```bash
+vagrant up
+
+ansible-playbook -u vagrant -i 192.168.56.100, playbooks/finalization.yaml
+```
+
+To tear down the cluster run:
+```bash
+vagrant destroy
+
+docker network ls # here you can check if the network is still live and remove it 
+```
+
+## Migrating application to Kubernetes
+Created the Kubernetes manifests in ```k8s``` directory. Installed kubectl on my host (```brew install kubectl``` on macOS). 
+
+Setting up a ```imagePullSecrets``` for GHCR: first generate a new token (classic) on Github. Give it scopes ```read:packages, repo```. Copy the token and paste it here:
+```bash
+kubectl create secret docker-registry ghcr-secret \
+  --docker-server=ghcr.io \
+  --docker-username=<your-github-username> \
+  --docker-password=<your-github-pat> \
+  --docker-email=<your-email>
+```
+Run this in controller node, it will print ```secret/ghcr-secret created```. Check in control node with:
+```bash
+kubectl get secrets
+```
+
+On host, run:
+```bash
+vagrant ssh ctrl -- sudo cat /etc/kubernetes/admin.conf > ~/kubeconfig-vagrant
+```
+This copies the kubeconfig from the controller to your home directory as ```kubeconfig-vagrant```.
+On your host, run:
+```bash
+export KUBECONFIG=~/kubeconfig-vagrant
+```
+You can add this line to your ~/.bashrc or ~/.zshrc for convenience. Now test the connection with
+```bash
+kubectl get nodes
+```
+This means that we have pointed our local ```kubectl``` towards the cluster, so we can make changes to it from the host (instead of inside the controller).
+
+If you have the cluster up and running, you should see all the nodes listed now, similar to this:
+```bash
+NAME         STATUS   ROLES           AGE    VERSION
+ctrl         Ready    control-plane   117m   v1.29.15
+k8s-node-1   Ready    <none>          116m   v1.29.15
+k8s-node-2   Ready    <none>          115m   v1.29.15
+```
+
+Now you can apply the Kubernetes manifest YAML files directly from the host. Tis means we copy the manifests from the host to the controller.
+```bash
+kubectl apply -f /Users/annavisman/stack/TUDelft/REMLA/operation/k8s/model-service.yaml
+
+# deployment.apps/model-service created
+# service/model-service created
+
+scp -i .vagrant/machines/ctrl/virtualbox/private_key k8s/model-service.yaml vagrant@192.168.56.100:/home/vagrant/
+# model-service.yaml                                                   100%  786   620.5KB/s   00:00  
+
+scp -i .vagrant/machines/ctrl/virtualbox/private_key k8s/app.yaml vagrant@192.168.56.100:/home/vagrant/
+# app.yaml                                                             100% 1056     1.8MB/s   00:00   
+```
+NOTE: Any changes you make to the local manifests on host, must be copied manually to the cluster for it to reflect the changes. So, after making changes, you need to run the above ```scp``` commands again, and apply them in the ```ctrl``` node (see ```kubectl apply``` below).
+
+Now (from the controller or host) we label the nodes:
+```bash
+kubectl label node k8s-node-1 node-role=model --overwrite
+kubectl label node k8s-node-2 node-role=app --overwrite
+```
+
+Check the node labels with:
+```bash
+kubectl get nodes --show-labels
+```
+
+We apply the manifests (inside the controller):
+```bash
+kubectl apply -f model-service.yaml
+# deployment.apps/model-service configured
+# service/model-service unchanged
+
+kubectl apply -f app.yaml
+# deployment.apps/app created
+# service/app created
+```
+
+Verify that the pods are running on node 1 and 2:
+```
+kubectl get pods -o wide
+```
+
+Triger a rollout restart:
+```bash
+kubectl rollout restart deployment app
+kubectl rollout restart deployment model-service
+```
+
+Deleting existing pods manually (only safe is the app is stateless):
+```
+kubectl delete pods -l app=app
+kubectl delete pods -l app=model-service
+``` 
 ## Use-Case: Tweet Sentiment Analysis
 
 Our application features a simple interface where users can enter a tweet to analyze its sentiment. When submitted, the backend runs a sentiment analysis model and displays the predicted sentiment. The user then sees whether the tweet is positive or negative, and can confirm or correct this prediction. This feedback helps improve the model and makes the app more interactive and accurate over time.

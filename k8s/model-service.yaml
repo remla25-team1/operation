@@ -1,0 +1,47 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: model-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: model-service
+  template:
+    metadata:
+      labels:
+        app: model-service
+    spec:
+      imagePullSecrets:
+      - name: ghcr-secret
+      nodeSelector:                
+        node-role: model           # This will schedule the model-service pod only on nodes labeled with node-role=model
+        kubernetes.io/hostname: k8s-node-1 # we will run model-service on node 1
+      containers:
+      - name: model-service
+        image: ghcr.io/remla25-team1/model-service:latest
+        ports:
+        - containerPort: 8081
+        env:
+        - name: PORT
+          value: "8081"
+        - name: HOST
+          value: "0.0.0.0"
+        volumeMounts:
+        - name: app-data
+          mountPath: /app/data
+      volumes:
+      - name: app-data
+        emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: model-service
+spec:
+  selector:
+    app: model-service
+  ports:
+    - protocol: TCP
+      port: 8081
+      targetPort: 8081

@@ -1,6 +1,6 @@
-- hosts: all
-  connection: local
-  become: yes
+- hosts: all 
+  # connection: local
+  become: true
   tasks:
     # Init cluster
     - name: Check if Kubernetes has already been initialized
@@ -49,6 +49,19 @@
         owner: vagrant
         group: vagrant
         mode: "0644"
+      
+    # Step 18 and 19 fix?
+    - name: Generate kubeadm join command
+      ansible.builtin.command: kubeadm token create --print-join-command
+      register: join_cmd
+
+    - name: Write join script into the shared folder
+      ansible.builtin.copy:
+        dest: /vagrant/join_cluster.sh
+        mode: "0755"
+        content: |
+          #!/usr/bin/env bash
+          {{ join_cmd.stdout }} --cri-socket /run/containerd/containerd.sock
 
     # Create Pod network
     - name: Download Flannel YAML configuration
@@ -95,7 +108,7 @@
 
     # Install Helm package
     - name: Ensure helm-diff plugin is installed
-      become: yes
+      become: true
       become_user: vagrant
       ansible.builtin.command: helm plugin install https://github.com/databus23/helm-diff
       args:

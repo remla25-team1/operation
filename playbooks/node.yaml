@@ -1,3 +1,9 @@
-- hosts: all
-  connection: local
-  become: yes
+# playbooks/node.yaml
+
+- hosts: node-1:node-2
+  become: true
+  tasks:
+    - name: Join this node to the Kubernetes cluster
+      ansible.builtin.command: bash /vagrant/join_cluster.sh
+      args:
+        creates: /etc/kubernetes/kubelet.conf
