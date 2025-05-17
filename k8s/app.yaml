@@ -19,26 +19,24 @@ spec:
         kubernetes.io/hostname: k8s-node-2 # we will run model-service on node 2
       containers:
       - name: app
-        image: ghcr.io/remla25-team1/app:latest
+        image: ghcr.io/remla25-team1/app:latest        
         ports:
         - containerPort: 8080
-        env:
-        - name: MODEL_SERVICE_HOST
-          value: "model-service"
-        - name: APP_VERSION
-          value: "latest"
-        - name: MODEL_SERVICE_VERSION
-          value: "latest"
-        - name: MODEL_SERVICE_PORT
-          value: "8081"
-        - name: PORT
-          value: "8080"
+        envFrom:
+        - configMapRef:
+            name: application-config
         volumeMounts:
         - name: app-data
           mountPath: /app/data
+        - name: shared-data
+          mountPath: /mnt/shared
       volumes:
       - name: app-data
         emptyDir: {}
+      - name: shared-data
+        hostPath:
+          path: /mnt/shared
+          type: Directory
 ---
 apiVersion: v1
 kind: Service

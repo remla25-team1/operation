@@ -22,7 +22,6 @@ Vagrant.configure("2") do |config|
   SHELL
 
 
-
   # Helper method to configure a VM
   def configure_vm(vm, hostname, ip, cpus, memory, playbooks, extra_vars)
     vm.vm.hostname = hostname
@@ -45,6 +44,8 @@ Vagrant.configure("2") do |config|
 
   # Controller VM
   config.vm.define "ctrl" do |ctrl|
+    # mount all Vms with shared folder as /mnt/shared
+    ctrl.vm.synced_folder "./shared", "/mnt/shared"
 
     configure_vm(
       ctrl,
@@ -66,6 +67,9 @@ Vagrant.configure("2") do |config|
   (1..NUM_WORKERS).each do |i|
 
     config.vm.define "node-#{i}" do |worker|
+      # mount all Vms with shared folder as /mnt/shared
+      worker.vm.synced_folder "./shared", "/mnt/shared"
+      
       configure_vm(
         worker,
         "k8s-node-#{i}",
