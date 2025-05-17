@@ -32,7 +32,7 @@ Approved PR: https://github.com/remla25-team1/model-training/pull/1 | https://gi
 ### -- Anna: --
 Created PR: 
 
-Approved PR: 
+Approved Sofia's PR with A2 code: https://github.com/remla25-team1/operation/pull/3
 
 ### -- Sofia: --
 Created PR: https://github.com/remla25-team1/operation/pull/3
