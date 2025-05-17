@@ -1,0 +1,178 @@
+- name: Finalize Kubernetes Cluster Setup
+  hosts: all
+  connection: local
+  become: true
+  vars:
+    # these should already be passed in via --extra-vars
+    # cluster_network: "192.168.56"
+    # ctrl_ip: "192.168.56.100"
+    metallb_version: "v0.14.9"
+    metallb_crd_url: "https://raw.githubusercontent.com/metallb/metallb/{{ metallb_version }}/config/crd/metallb-native.yaml"
+    ip_pool_name: "default-pool"
+    l2_advert_name: "default-l2"
+    ip_range_start: "{{ cluster_network }}.90"
+    ip_range_end:   "{{ cluster_network }}.99"
+
+  tasks:
+    - name: Ensure Helm is installed
+      apt:
+        name: helm
+        state: present
+        update_cache: yes
+
+    # --- Step 20: Install MetalLB ---
+    - name: Create namespace metallb-system
+      k8s:
+        api_version: v1
+        kind: Namespace
+        name: metallb-system
+        state: present
+        kubeconfig: /etc/kubernetes/admin.conf
+
+    - name: Install MetalLB CRDs
+      shell: |
+        kubectl apply -f {{ metallb_crd_url }}
+      args:
+        warn: false
+
+    - name: Install MetalLB core components
+      shell: |
+        kubectl apply -f https://raw.githubusercontent.com/metallb/metallb/{{ metallb_version }}/config/manifests/metallb-native.yaml
+      args:
+        warn: false
+
+    - name: Wait for MetalLB controller to be Ready
+      shell: >
+        kubectl wait -n metallb-system
+          --for=condition=Ready
+          pod -l app=metallb,component=controller
+          --timeout=60s
+      register: metallb_wait
+      failed_when: metallb_wait.rc != 0
+
+    - name: Create MetalLB IPAddressPool
+      k8s:
+        state: present
+        definition:
+          apiVersion: metallb.io/v1beta1
+          kind: IPAddressPool
+          metadata:
+            name: "{{ ip_pool_name }}"
+            namespace: metallb-system
+          spec:
+            addresses:
+              - "{{ ip_range_start }}-{{ ip_range_end }}"
+        kubeconfig: /etc/kubernetes/admin.conf
+
+    - name: Create MetalLB L2Advertisement
+      k8s:
+        state: present
+        definition:
+          apiVersion: metallb.io/v1beta1
+          kind: L2Advertisement
+          metadata:
+            name: "{{ l2_advert_name }}"
+            namespace: metallb-system
+          spec:
+            ipAddressPools:
+              - "{{ ip_pool_name }}"
+        kubeconfig: /etc/kubernetes/admin.conf
+
+    # --- Step 21: Install NGINX Ingress Controller ---
+    - name: Add ingress-nginx Helm repo
+      shell: helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
+      args: { warn: false }
+
+    - name: Update Helm repos
+      shell: helm repo update
+      args: { warn: false }
+
+    - name: Install ingress-nginx chart
+      shell: |
+        helm upgrade --install ingress-nginx ingress-nginx/ingress-nginx \
+          --namespace ingress-nginx --create-namespace \
+          --set controller.ingressClassResource.name=nginx \
+          --set controller.ingressClassResource.controllerValue=k8s.io/ingress-nginx
+      args: { warn: false }
+
+    # --- Step 22: Install Kubernetes Dashboard ---
+    - name: Add kubernetes-dashboard Helm repo
+      shell: helm repo add kubernetes-dashboard https://kubernetes.github.io/dashboard/
+      args: { warn: false }
+
+    - name: Update Helm repos again
+      shell: helm repo update
+      args: { warn: false }
+
+    - name: Install kubernetes-dashboard chart
+      shell: |
+        helm upgrade --install kubernetes-dashboard kubernetes-dashboard/kubernetes-dashboard \
+          --namespace kubernetes-dashboard --create-namespace \
+          --set ingress.enabled=true \
+          --set ingress.ingressClassName=nginx \
+          --set ingress.hosts[0].host=dashboard.local \
+          --set ingress.hosts[0].paths[0].path="/" \
+          --set ingress.hosts[0].paths[0].pathType=Prefix
+      args: { warn: false }
+
+    - name: Create ServiceAccount for dashboard admin
+      k8s:
+        state: present
+        definition:
+          apiVersion: v1
+          kind: ServiceAccount
+          metadata:
+            name: admin-user
+            namespace: kubernetes-dashboard
+        kubeconfig: /etc/kubernetes/admin.conf
+
+    - name: Bind cluster-admin role to dashboard admin-user
+      k8s:
+        state: present
+        definition:
+          apiVersion: rbac.authorization.k8s.io/v1
+          kind: ClusterRoleBinding
+          metadata:
+            name: admin-user-binding
+          subjects:
+            - kind: ServiceAccount
+              name: admin-user
+              namespace: kubernetes-dashboard
+          roleRef:
+            kind: ClusterRole
+            name: cluster-admin
+            apiGroup: rbac.authorization.k8s.io
+        kubeconfig: /etc/kubernetes/admin.conf
+
+    - name: Retrieve Dashboard login token
+      shell: |
+        kubectl -n kubernetes-dashboard create token admin-user --kubeconfig /etc/kubernetes/admin.conf
+      register: dash_token
+
+    - name: Show the Dashboard login token
+      debug:
+        msg: "{{ dash_token.stdout }}"
+
+    # --- Step 23: (Optional) Install Istio ---
+    - name: Download Istio 1.25.2
+      get_url:
+        url: https://github.com/istio/istio/releases/download/1.25.2/istio-1.25.2-linux-amd64.tar.gz
+        dest: /tmp/istio.tar.gz
+        mode: '0644'
+
+    - name: Unarchive Istio
+      unarchive:
+        src: /tmp/istio.tar.gz
+        dest: /opt
+        remote_src: yes
+
+    - name: Add istioctl to PATH for vagrant user
+      lineinfile:
+        path: /home/vagrant/.profile
+        line: 'export PATH=$PATH:/opt/istio-1.25.2/bin'
+        create: yes
+
+    - name: Install Istio with default profile
+      shell: |
+        /opt/istio-1.25.2/bin/istioctl install -y -f /opt/istio-1.25.2/samples/operator/config.yaml
+      args: { warn: false }
