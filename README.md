@@ -45,6 +45,22 @@ Once the containers are running, open your browser and go to [http://localhost:8
    docker-compose down
    ```
 
+## Running Kubernetes Cluster
+Navigate into ```operation``` dir and run:
+
+```bash
+vagrant up
+
+ansible-playbook -u vagrant -i 192.168.56.100, playbooks/finalization.yaml
+```
+
+To tear down the cluster run:
+```bash
+vagrant destroy
+
+docker network ls # here you can check if the network is still live and remove it 
+```
+
 ## Use-Case: Tweet Sentiment Analysis
 
 Our application features a simple interface where users can enter a tweet to analyze its sentiment. When submitted, the backend runs a sentiment analysis model and displays the predicted sentiment. The user then sees whether the tweet is positive or negative, and can confirm or correct this prediction. This feedback helps improve the model and makes the app more interactive and accurate over time.
