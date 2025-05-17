@@ -1,26 +1,34 @@
 - name: Finalize Kubernetes Cluster Setup
   hosts: all
-  connection: local
   become: true
   vars:
-    # these should already be passed in via --extra-vars
-    # cluster_network: "192.168.56"
-    # ctrl_ip: "192.168.56.100"
     metallb_version: "v0.14.9"
     metallb_crd_url: "https://raw.githubusercontent.com/metallb/metallb/{{ metallb_version }}/config/crd/metallb-native.yaml"
     ip_pool_name: "default-pool"
     l2_advert_name: "default-l2"
     ip_range_start: "{{ cluster_network }}.90"
     ip_range_end:   "{{ cluster_network }}.99"
+    ansible_python_interpreter: /usr/bin/python3
+    istio_version: "1.25.2"              # ← ADD THIS HERE
+
+    # these should already be passed in via --extra-vars...
+    cluster_network: "192.168.56"
+    ctrl_ip:         "192.168.56.100"
 
   tasks:
+    - name: Install Kubernetes Python client
+      apt:
+        name: python3-kubernetes
+        state: present
+        update_cache: yes
+
     - name: Ensure Helm is installed
       apt:
         name: helm
         state: present
         update_cache: yes
 
-    # --- Step 20: Install MetalLB ---
+    # Step 20: Install MetalLB
     - name: Create namespace metallb-system
       k8s:
         api_version: v1
@@ -29,24 +37,26 @@
         state: present
         kubeconfig: /etc/kubernetes/admin.conf
 
-    - name: Install MetalLB CRDs
-      shell: |
-        kubectl apply -f {{ metallb_crd_url }}
-      args:
-        warn: false
-
-    - name: Install MetalLB core components
-      shell: |
-        kubectl apply -f https://raw.githubusercontent.com/metallb/metallb/{{ metallb_version }}/config/manifests/metallb-native.yaml
-      args:
-        warn: false
+    - name: Install MetalLB (CRDs + controllers)
+      k8s:
+        src: "https://raw.githubusercontent.com/metallb/metallb/{{ metallb_version }}/config/manifests/metallb-native.yaml"
+        state: present
+        kubeconfig: /etc/kubernetes/admin.conf
 
     - name: Wait for MetalLB controller to be Ready
-      shell: >
-        kubectl wait -n metallb-system
-          --for=condition=Ready
-          pod -l app=metallb,component=controller
-          --timeout=60s
+      command:
+        argv:
+          - kubectl
+          - wait
+          - -n
+          - metallb-system
+          - --for=condition=Ready
+          - pod
+          - -l
+          - app=metallb,component=controller
+          - --timeout=60s
+      environment:
+        KUBECONFIG: /etc/kubernetes/admin.conf
       register: metallb_wait
       failed_when: metallb_wait.rc != 0
 
@@ -78,34 +88,31 @@
               - "{{ ip_pool_name }}"
         kubeconfig: /etc/kubernetes/admin.conf
 
-    # --- Step 21: Install NGINX Ingress Controller ---
+    # Step 21: Install NGINX Ingress Controller
     - name: Add ingress-nginx Helm repo
-      shell: helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
-      args: { warn: false }
+      ansible.builtin.shell: helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
 
     - name: Update Helm repos
-      shell: helm repo update
-      args: { warn: false }
+      ansible.builtin.shell: helm repo update
 
     - name: Install ingress-nginx chart
-      shell: |
+      ansible.builtin.shell: |
         helm upgrade --install ingress-nginx ingress-nginx/ingress-nginx \
           --namespace ingress-nginx --create-namespace \
           --set controller.ingressClassResource.name=nginx \
           --set controller.ingressClassResource.controllerValue=k8s.io/ingress-nginx
-      args: { warn: false }
+      environment:
+        KUBECONFIG: /etc/kubernetes/admin.conf
 
-    # --- Step 22: Install Kubernetes Dashboard ---
+    # Step 22: Install Kubernetes Dashboard
     - name: Add kubernetes-dashboard Helm repo
-      shell: helm repo add kubernetes-dashboard https://kubernetes.github.io/dashboard/
-      args: { warn: false }
+      ansible.builtin.shell: helm repo add kubernetes-dashboard https://kubernetes.github.io/dashboard/
 
-    - name: Update Helm repos again
-      shell: helm repo update
-      args: { warn: false }
+    - name: Update Helm repos (after adding dashboard repo)
+      ansible.builtin.shell: helm repo update
 
     - name: Install kubernetes-dashboard chart
-      shell: |
+      ansible.builtin.shell: |
         helm upgrade --install kubernetes-dashboard kubernetes-dashboard/kubernetes-dashboard \
           --namespace kubernetes-dashboard --create-namespace \
           --set ingress.enabled=true \
@@ -113,8 +120,10 @@
           --set ingress.hosts[0].host=dashboard.local \
           --set ingress.hosts[0].paths[0].path="/" \
           --set ingress.hosts[0].paths[0].pathType=Prefix
-      args: { warn: false }
+      environment:
+        KUBECONFIG: /etc/kubernetes/admin.conf
 
+    # Step 22b: Dashboard Admin RBAC & Token
     - name: Create ServiceAccount for dashboard admin
       k8s:
         state: present
@@ -139,40 +148,75 @@
               name: admin-user
               namespace: kubernetes-dashboard
           roleRef:
+            apiGroup: rbac.authorization.k8s.io
             kind: ClusterRole
             name: cluster-admin
-            apiGroup: rbac.authorization.k8s.io
         kubeconfig: /etc/kubernetes/admin.conf
 
     - name: Retrieve Dashboard login token
-      shell: |
-        kubectl -n kubernetes-dashboard create token admin-user --kubeconfig /etc/kubernetes/admin.conf
+      command:
+        argv:
+          - kubectl
+          - -n
+          - kubernetes-dashboard
+          - create
+          - token
+          - admin-user
+      environment:
+        KUBECONFIG: /etc/kubernetes/admin.conf
       register: dash_token
 
     - name: Show the Dashboard login token
       debug:
         msg: "{{ dash_token.stdout }}"
 
-    # --- Step 23: (Optional) Install Istio ---
-    - name: Download Istio 1.25.2
+    # Step 23: Install Istio 
+    - name: Set Istio architecture variable
+      set_fact:
+        istio_arch: >-
+          {% if ansible_architecture == "x86_64" %}
+            amd64
+          {% elif ansible_architecture == "aarch64" %}
+            arm64
+          {% else %}
+            amd64
+          {% endif %}
+        istio_dir: "/opt/istio-{{ istio_version }}"
+
+    - name: Download Istio {{ istio_version }}
       get_url:
-        url: https://github.com/istio/istio/releases/download/1.25.2/istio-1.25.2-linux-amd64.tar.gz
+        url: "https://github.com/istio/istio/releases/download/{{ istio_version }}/istio-{{ istio_version }}-linux-{{ istio_arch | trim }}.tar.gz"
         dest: /tmp/istio.tar.gz
-        mode: '0644'
+        mode: '0755'
 
     - name: Unarchive Istio
       unarchive:
         src: /tmp/istio.tar.gz
         dest: /opt
         remote_src: yes
+        extra_opts:
+          - --transform
+          - "s,^istio-{{ istio_version }},istio-{{ istio_version }},"
+
+    - name: Make istioctl executable
+      file:
+        path: "{{ istio_dir }}/bin/istioctl"
+        mode: '0755'
+        state: file
 
     - name: Add istioctl to PATH for vagrant user
       lineinfile:
         path: /home/vagrant/.profile
-        line: 'export PATH=$PATH:/opt/istio-1.25.2/bin'
+        line: "export PATH=$PATH:{{ istio_dir }}/bin"
         create: yes
+        owner: vagrant
+        group: vagrant
+        mode: '0644'
 
+    # this fails on arm64.. someone else should try to run this
     - name: Install Istio with default profile
-      shell: |
-        /opt/istio-1.25.2/bin/istioctl install -y -f /opt/istio-1.25.2/samples/operator/config.yaml
-      args: { warn: false }
+      command: >
+        {{ istio_dir }}/bin/istioctl install -y
+          -f {{ istio_dir }}/samples/operator/config.yaml
+      environment:
+        PATH: "{{ istio_dir }}/bin:{{ ansible_env.PATH }}"
