@@ -34,8 +34,7 @@
             state: present
             key: "{{ lookup('file', item) }}"
           with_fileglob:
-            - "/vagrant/ssh_keys/*.pub"
-
+            - "{{ playbook_dir }}/../ssh_keys/*.pub"
 
     # step 5
     - name: Disable swap for Kubernetes
