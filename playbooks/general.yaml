@@ -1,81 +1,150 @@
+# playbooks/general.yaml
 - hosts: all
-  connection: local
-  become: yes
+  # connection: local
+  become: true
   tasks:
-    # Registering SSH keys
-    - name: Ensure .ssh exists
-      file:
-        path: /home/vagrant/.ssh
-        state: directory
-        owner: vagrant
-        group: vagrant
-        mode: "0700"
+    - name: Update apt cache
+      apt:
+        update_cache: yes
 
-    - name: Register all team SSH keys
-      ansible.posix.authorized_key:
-        user: vagrant
-        key: "{{ lookup('file', item) }}"
+    - name: Install dependencies
+      apt:
+        name:
+          - apt-transport-https
+          - ca-certificates
+          - curl
+          - gnupg
+          - lsb-release
         state: present
-      loop: "{{ lookup('fileglob', '/vagrant/ssh_keys/*.pub', wantlist=True) }}"
 
-    # Disable SWAP
-    - name: Disable SWAP
-      ansible.builtin.shell: swapoff -a
+    # step 4
+    - name: Register public SSH keys for passwordless login
+      block:
+        - name: Ensure the SSH directory exists
+          file:
+            path: /home/vagrant/.ssh
+            state: directory
+            owner: vagrant
+            group: vagrant
+            mode: '0700'
 
-    - name: Remove the swap entry from the /etc/fstab
-      ansible.builtin.lineinfile:
-        path: /etc/fstab
-        regexp: "^(.*swap.*)$"
-        line: '# \1'
-        backrefs: yes
+        - name: Add team members' public SSH keys to authorized_keys
+          authorized_key:
+            user: vagrant
+            state: present
+            key: "{{ lookup('file', item) }}"
+          with_fileglob:
+            - "/vagrant/ssh_keys/*.pub"
 
-    # br_netfilter
-    - name: Persist kernel modules
-      ansible.builtin.copy:
-        content: |
-          br_netfilter
-          overlay
-        dest: /etc/modules-load.d/k8s.conf
-        mode: "0644"
 
-    - name: Automatically load the kernel modules
-      community.general.modprobe:
-        name: "{{ item }}"
-        state: present
-      loop:
-        - br_netfilter
-        - overlay
+    # step 5
+    - name: Disable swap for Kubernetes
+      block:
+        - name: Disable swap for the running system
+          ansible.builtin.shell: swapoff -a
 
-    # Enable IPv4 forwarding
-    - name: Enable IP forwarding and bridge settings
-      ansible.posix.sysctl:
-        name: "{{ item }}"
-        value: "1"
-        state: present
-        reload: yes
-      loop:
-        - net.ipv4.ip_forward
-        - net.bridge.bridge-nf-call-iptables
-        - net.bridge.bridge-nf-call-ip6tables
+        - name: Remove swap entry from /etc/fstab
+          ansible.builtin.lineinfile:
+            path: /etc/fstab
+            regexp: '^\s*[^#]+\s+swap\s+'
+            state: absent
 
-    # Manage /etc/hosts
-    - name: Generate cluster hosts entries
-      set_fact:
-        cluster_hosts: |
-          {{ ctrl_ip }} k8s-ctrl
-          {% for i in range(1, worker_count + 1) %}
-          {{ cluster_network }}.{{ 100 + i }} k8s-node-{{ i }}
-          {% endfor %}
+        - name: Ensure swap is disabled
+          ansible.builtin.command: free -h
+          register: memory_status
 
-    - name: Update /etc/hosts
-      ansible.builtin.blockinfile:
+        - name: Print memory status
+          ansible.builtin.debug:
+            var: memory_status.stdout_lines
+
+    # step 6
+    - name: Enable br_netfilter for Kubernetes
+      block:
+        - name: Ensure the modules-load.d directory exists
+          file:
+            path: /etc/modules-load.d
+            state: directory
+            owner: root
+            group: root
+            mode: '0755'
+
+        - name: Create /etc/modules-load.d/k8s.conf to load overlay and br_netfilter
+          copy:
+            dest: /etc/modules-load.d/k8s.conf
+            content: |
+              overlay
+              br_netfilter
+            owner: root
+            group: root
+            mode: '0644'
+
+        - name: Load the br_netfilter module
+          modprobe:
+            name: br_netfilter
+            state: present
+
+        - name: Load the overlay module
+          modprobe:
+            name: overlay
+            state: present
+
+        - name: Ensure br_netfilter sysctl settings are enabled
+          sysctl:
+            name: net.bridge.bridge-nf-call-iptables
+            value: 1
+            state: present
+            sysctl_set: yes
+            reload: yes
+
+        - name: Ensure br_netfilter sysctl settings for IPv6 are enabled
+          sysctl:
+            name: net.bridge.bridge-nf-call-ip6tables
+            value: 1
+            state: present
+            sysctl_set: yes
+            reload: yes
+
+    # step 7
+    - name: Enable IPv4 forwarding and configure kernel properties
+      block:
+        - name: Enable IPv4 forwarding
+          sysctl:
+            name: net.ipv4.ip_forward
+            value: 1
+            state: present
+            sysctl_set: yes
+            reload: yes
+
+        - name: Enable net.bridge ip tables
+          sysctl:
+            name: net.bridge.bridge-nf-call-iptables
+            value: 1
+            state: present
+            sysctl_set: yes
+            reload: yes
+        - name: Enable net.bridge ip6tables
+          sysctl:
+              name: net.bridge.bridge-nf-call-ip6tables
+              value: 1
+              state: present
+              sysctl_set: yes
+              reload: yes
+
+    # step 8
+    - name: Append to /etc/hosts file from template
+      blockinfile:
         path: /etc/hosts
-        block: "{{ cluster_hosts }}"
-        marker: "# {mark} K8S CLUSTER ENTRIES - ANSIBLE MANAGED"
-        insertafter: "^127.0.0.1"
-        backup: yes
+        block: |
+          {% raw %}
+          # Kubernetes cluster hosts
+          {{ ctrl_ip }}   k8s-ctrl
+          {% for i in range(1, worker_count + 1) %}
+          {{ cluster_network }}.{{ 100 + i }}   k8s-node-{{ i }}
+          {% endfor %}
+          {% endraw %}
+      when: ctrl_ip is defined and worker_count is defined and cluster_network is defined
 
-    # Add kubernetes repository
+    # step 9
     - name: Add Kubernetes GPG key
       ansible.builtin.apt_key:
         url: https://pkgs.k8s.io/core:/stable:/v1.29/deb/Release.key
@@ -92,8 +161,8 @@
     - name: Update apt cache
       ansible.builtin.apt:
         update_cache: yes
-
-    # Install K8s tools (did not manage to specify specific versions)
+    
+    # step 10
     - name: Install kubelet, kubeadm and kubectl
       ansible.builtin.apt:
         name:
@@ -105,7 +174,7 @@
         state: present
         update_cache: yes
 
-    # Configure Containerd
+    # step 11
     - name: Ensure /etc/containerd directory exists
       ansible.builtin.file:
         path: /etc/containerd
@@ -144,9 +213,13 @@
         name: containerd
         state: restarted
 
-    # Kubelet
+    # step 12
     - name: Start and enable kubelet service on all nodes
       ansible.builtin.service:
         name: kubelet
         state: started
         enabled: yes
+
+    - name: List all Ansible hosts
+      ansible.builtin.debug:
+        msg: "{{ groups['all'] }}"
