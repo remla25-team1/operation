@@ -13,10 +13,13 @@ Each component can be developed, tested, and deployed independently, yet they fo
 
 ## Install & Run
 
-Make sure you have **Docker** and **Docker Compose** installed:  
-[Install Docker & Docker Compose](https://docs.docker.com/compose/install/)
+Make sure you have installed:
+- **Docker** and **Docker Compose** installed: [Install Docker & Docker Compose](https://docs.docker.com/compose/install/)
+- **Vagrant**
+- **Ansible**
+- **Kubectl**
 
-### 1. Clone the Repository
+## Clone the Repository
 
 Clone the **operation** repository from GitHub (e.g., using SSH):
 
@@ -25,7 +28,7 @@ Clone the **operation** repository from GitHub (e.g., using SSH):
    cd operation
    ```
 
-### 2. Start the Services
+<!-- ### 2. Start the Services
 From the root of the **operation** repository, build and start all services using Docker Compose:
 
    ```bash
@@ -43,7 +46,7 @@ Once the containers are running, open your browser and go to [http://localhost:8
    docker compose down
    # or
    docker-compose down
-   ```
+   ``` -->
 
 ## Running Kubernetes Cluster
 Navigate into ```operation``` dir and run:
@@ -116,10 +119,12 @@ k8s-node-1   Ready    <none>          116m   v1.29.15
 k8s-node-2   Ready    <none>          115m   v1.29.15
 ```
 
-Now you can apply the Kubernetes manifest YAML files directly from the host. Tis means we copy the manifests from the host to the controller.
+Now you can apply the Kubernetes manifest YAML files directly from the host. This means we copy the manifests from the host to the controller.
 ```bash
 kubectl apply -f /Users/annavisman/stack/TUDelft/REMLA/operation/k8s/model-service.yaml
-
+kubectl apply -f /Users/annavisman/stack/TUDelft/REMLA/operation/k8s/app.yaml
+kubectl apply -f /Users/annavisman/stack/TUDelft/REMLA/operation/k8s/ingress.yaml
+kubectl apply -f /Users/annavisman/stack/TUDelft/REMLA/operation/k8s/application-config.yaml
 # deployment.apps/model-service created
 # service/model-service created
 
@@ -157,8 +162,6 @@ kubectl apply -f model-service.yaml
 # service/model-service unchanged
 
 kubectl apply -f app.yaml
-# deployment.apps/app created
-# service/app created
 
 kubectl apply -f ingress.yaml
 ```
@@ -214,7 +217,21 @@ kubectl get pods -l app=app
 # NAME                  READY   STATUS    RESTARTS   AGE
 # app-8cd6694df-5xnpc   1/1     Running   0          46m
 ```
-Access the app in browser at: ```http://192.168.56.101:32045```
+Access the app in browser at: ```http://192.168.56.101:31224``` or ```http://192.168.56.102:31224```.
+Find this port number in the ```kubectl get svc app``` command.
+Even though the ```app``` pod runs on node-2 according to our config, the ```NodePort``` service exposes the app on the same port on every node in the cluster.
+The Kubernetes network proxy forwads the traffic internally to the ```app``` pod once its running.
+```pqsql
+Browser --> http://192.168.56.101:31224
+                  |
+      +-----------+-----------+
+      | kube-proxy on node-1  |
+      +-----------+-----------+
+                  |
+         [Cluster Internal Routing]
+                  |
+        Pod running on node-2
+```
 
 (Optional?) update ```/etc/hosts``` on host: add ```<node-ip> app.local``` 
 #### Other commands:
@@ -237,6 +254,29 @@ kubectl get configmaps
 # NAME                 DATA   AGE
 # application-config   6      52m
 # kube-root-ca.crt     1      4h33m
+```
+
+## Other useful stuff
+Pushing new Docker image of a repo so that it can be deployed on the running cluster (```app``` example):
+```bash
+docker build -t ghcr.io/remla25-team1/app:latest .
+echo YOUR_TOKEN_HERE | docker login ghcr.io -u YOUR_GITHUB_USERNAME --password-stdin
+ # this requires you to have a GHCR token for writing packages (you might want to store it too)
+docker push ghcr.io/remla25-team1/app:latest 
+
+# trigger a Deployment restart to pull the new image (ssh into ctrl node!)
+kubectl rollout restart deployment app
+#deployment.apps/app restarted
+
+# check the rollout status
+kubectl rollout status deployment app
+# deployment "app" successfully rolled out
+
+# confirm that the new pod is running (below, you can see the age difference)
+kubectl get pods -o wide
+# NAME                            READY   STATUS    RESTARTS   AGE   IP           NODE         NOMINATED NODE   READINESS GATES
+# app-778466bdff-mzjxl            1/1     Running   0          82s   10.244.2.7   k8s-node-2   <none>           <none>
+# model-service-5987884b9-mjjln   1/1     Running   0          46m   10.244.1.7   k8s-node-1   <none>           <none>
 ```
 ## Use-Case: Tweet Sentiment Analysis
 
@@ -278,7 +318,7 @@ Our application features a simple interface where users can enter a tweet to ana
 
 **lib-ml**: Built the `lib-ml` preprocessing pipeline, integrated the library into `model-service` for consistent preprocessing.
 
-**modle-training**: Completed the `model-training` pipeline: read datasets, trained models, and exported the model artifact for inference in `model-service`.
+**model-training**: Completed the `model-training` pipeline: read datasets, trained models, and exported the model artifact for inference in `model-service`.
 
 **operation**: Provides a simple Dockerfile setup along with clear documentation for running the entire system locally.
 

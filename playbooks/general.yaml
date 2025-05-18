@@ -213,6 +213,13 @@
         state: restarted
 
     # step 12
+    - name: Configure kubelet node IP based on eth1 interface
+      ansible.builtin.lineinfile:
+        path: /etc/default/kubelet
+        regexp: '^KUBELET_EXTRA_ARGS='
+        line: "KUBELET_EXTRA_ARGS=--node-ip={{ ansible_eth1.ipv4.address }}"
+        create: yes
+        
     - name: Start and enable kubelet service on all nodes
       ansible.builtin.service:
         name: kubelet
