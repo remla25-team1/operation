@@ -21,9 +21,11 @@ services:
     environment:
       - PORT=${CONTAINER_PORT}
       - HOST=0.0.0.0
+      - MODEL_VERSION=${MODEL_VERSION} 
+      - MODEL_DIR=/app/output 
     restart: always
     volumes:
-      - ./app_data:/app/data
+      - ./cached_model:/app/output
     networks:
       - app-network
 

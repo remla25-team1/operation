@@ -1,2 +1,3 @@
 .vagrant
 shared/admin.conf
+cached_model/
