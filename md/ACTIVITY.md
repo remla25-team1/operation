@@ -86,7 +86,11 @@ Approved PR: https://github.com/remla25-team1/operation/pull/6 (related to A2)
 ### -- Yifan: --
 Created PR: https://github.com/remla25-team1/operation/pull/8 (related to A3)
 
-Approved PR:
+Created PR: https://github.com/remla25-team1/app/pull/8  (related to A3)
+
+Reviewed PR: https://github.com/remla25-team1/operation/pull/6 (related to A2)
+
+
 
 ### -- Zuji: --
 Created PR: https://github.com/remla25-team1/lib-version/pull/3 (related to A1)
