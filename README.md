@@ -61,6 +61,22 @@ vagrant destroy
 docker network ls # here you can check if the network is still live and remove it 
 ```
 
+
+All VMs mount the same shared VirtualBox folder as /mnt/shared into the VM. You can check this yourself. Here is a little proof:
+```bash
+vagrant@k8s-ctrl:~$ cd ..
+vagrant@k8s-ctrl:/home$ cd ..
+vagrant@k8s-ctrl:/$ ls
+bin                boot   dev  home  lib.usr-is-merged  media  opt   root  sbin                snap  swap.img  tmp  vagrant         var
+bin.usr-is-merged  cdrom  etc  lib   lost+found         mnt    proc  run   sbin.usr-is-merged  srv   sys       usr  vagrant_shared
+vagrant@k8s-ctrl:/$ cd mnt
+vagrant@k8s-ctrl:/mnt$ ls
+shared
+vagrant@k8s-ctrl:/mnt$ cd shared
+vagrant@k8s-ctrl:/mnt/shared$ ls
+admin.conf  ansible.cfg  inventory.ini
+```
+
 ## Migrating application to Kubernetes
 Created the Kubernetes manifests in ```k8s``` directory. Installed kubectl on my host (```brew install kubectl``` on macOS). 
 
@@ -107,11 +123,16 @@ kubectl apply -f /Users/annavisman/stack/TUDelft/REMLA/operation/k8s/model-servi
 # deployment.apps/model-service created
 # service/model-service created
 
+scp -i .vagrant/machines/ctrl/virtualbox/private_key k8s/application-config.yaml vagrant@192.168.56.100:/home/vagrant/
+application-config.yaml                                                                                                  100%  264   445.3KB/s   00:00    
+
 scp -i .vagrant/machines/ctrl/virtualbox/private_key k8s/model-service.yaml vagrant@192.168.56.100:/home/vagrant/
 # model-service.yaml                                                   100%  786   620.5KB/s   00:00  
 
 scp -i .vagrant/machines/ctrl/virtualbox/private_key k8s/app.yaml vagrant@192.168.56.100:/home/vagrant/
 # app.yaml                                                             100% 1056     1.8MB/s   00:00   
+
+scp -i .vagrant/machines/ctrl/virtualbox/private_key k8s/ingress.yaml vagrant@192.168.56.100:/home/vagrant/
 ```
 NOTE: Any changes you make to the local manifests on host, must be copied manually to the cluster for it to reflect the changes. So, after making changes, you need to run the above ```scp``` commands again, and apply them in the ```ctrl``` node (see ```kubectl apply``` below).
 
@@ -128,6 +149,9 @@ kubectl get nodes --show-labels
 
 We apply the manifests (inside the controller):
 ```bash
+kubectl apply -f application-config.yaml
+# configmap/app-config created
+
 kubectl apply -f model-service.yaml
 # deployment.apps/model-service configured
 # service/model-service unchanged
@@ -135,13 +159,65 @@ kubectl apply -f model-service.yaml
 kubectl apply -f app.yaml
 # deployment.apps/app created
 # service/app created
+
+kubectl apply -f ingress.yaml
 ```
 
 Verify that the pods are running on node 1 and 2:
-```
+```bash
 kubectl get pods -o wide
 ```
 
+With NGINX installed, we can see if the controller is deployed to the ```ingress-nginx``` namespace:
+```bash
+kubectl get pods -n ingress-nginx
+# NAME                                        READY   STATUS    RESTARTS   AGE
+# ingress-nginx-controller-5b498b5b49-t8hr8   1/1     Running   0          179m
+```
+
+Check on which IP the ingress controller is running:
+```bash
+kubectl get pods -n ingress-nginx -o wide
+# NAME                                        READY   STATUS    RESTARTS      AGE     IP            NODE         NOMINATED NODE   READINESS GATES
+# ingress-nginx-controller-5b498b5b49-t8hr8   1/1     Running   1 (11m ago)   3h44m   10.244.1.61   k8s-node-1   <none>           <none>
+```
+So here we see that it is running in node-1, so we want that (internal) IP. Im still a bit lost on how it all works for this part..
+```bash
+kubectl -n ingress-nginx get svc
+# NAME                                 TYPE           CLUSTER-IP     EXTERNAL-IP     PORT(S)                      AGE
+# ingress-nginx-controller             LoadBalancer   10.98.172.35   192.168.56.90   80:32256/TCP,443:30137/TCP   3h51m
+# ingress-nginx-controller-admission   ClusterIP      10.99.64.68    <none>          443/TCP                      3h51m
+kubectl -n ingress-nginx get svc ingress-nginx-controller
+# NAME                       TYPE           CLUSTER-IP     EXTERNAL-IP     PORT(S)                      AGE
+# ingress-nginx-controller   LoadBalancer   10.98.172.35   192.168.56.90   80:32256/TCP,443:30137/TCP   3h52m
+kubectl describe ingress app-ingress
+# Name:             app-ingress
+# Labels:           <none>
+# Namespace:        default
+# Address:          
+# Ingress Class:    <none>
+# Default backend:  <default>
+# Rules:
+#   Host        Path  Backends
+#   ----        ----  --------
+#   app.local   
+#               /   app:8080 (10.244.2.29:8080)
+# Annotations:  nginx.ingress.kubernetes.io/rewrite-target: /
+# Events:       <none>
+kubectl get svc app
+# NAME   TYPE       CLUSTER-IP      EXTERNAL-IP   PORT(S)          AGE
+# app    NodePort   10.96.110.197   <none>        8080:32045/TCP   140m
+kubectl get endpoints app
+# NAME   ENDPOINTS          AGE
+# app    10.244.2.29:8080   140m
+kubectl get pods -l app=app
+# NAME                  READY   STATUS    RESTARTS   AGE
+# app-8cd6694df-5xnpc   1/1     Running   0          46m
+```
+Access the app in browser at: ```http://192.168.56.101:32045```
+
+(Optional?) update ```/etc/hosts``` on host: add ```<node-ip> app.local``` 
+#### Other commands:
 Triger a rollout restart:
 ```bash
 kubectl rollout restart deployment app
@@ -149,10 +225,83 @@ kubectl rollout restart deployment model-service
 ```
 
 Deleting existing pods manually (only safe is the app is stateless):
-```
+```bash
+kubectl delete pods --all
 kubectl delete pods -l app=app
 kubectl delete pods -l app=model-service
 ``` 
+
+Inspecting all config maps installed in the cluster:
+```bash
+kubectl get configmaps
+# NAME                 DATA   AGE
+# application-config   6      52m
+# kube-root-ca.crt     1      4h33m
+```
+
+
+
+## Helm
+
+```bash
+helm install tweet-sentiment-app ./helm_chart     
+```
+
+after any change you have done
+```bash
+helm upgrade --install tweet-sentiment ./helm_chart
+
+# or
+helm upgrade --install tweet-sentiment ./helm_chart -f helm_chart/values.yaml
+```
+
+## Setup Promethues
+
+```bash
+helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+
+helm repo update
+
+helm install prometheus prometheus-community/kube-prometheus-stack \
+  -n monitoring --create-namespace \
+  -f dashboard/grafana-custom-values.yaml
+
+```
+
+## Grafana
+We provide a pre-configured dashboard for monitoring with 4 pannels:
+
+- Request count by sentiment (sentiment_requests_total)
+
+- Average response time (sentiment_response_time_seconds)
+
+- Correction submission stats (correction_requests_total)
+
+- In-progress requests (sentiment_requests_in_progress)
+
+### Auto-load via ConfigMap 
+```bash
+kubectl apply -f dashboard/tweet-sentiment-dashboard-configmap.yaml
+
+```
+### Import the dashboard manually
+- Open Grafana 
+   - Access to grafana:
+      ```bash
+      kubectl port-forward svc/prometheus-grafana -n monitoring 3000:80
+      ```
+      - Then open: http://localhost:3000
+      - Username: admin
+      - Password: prom-operator
+      
+- Go to Dashboards → Import
+
+- Upload: monitoring/tweet-sentiment-dashboard.json
+
+- Select Prometheus as data source, click Import
+
+
+
 ## Use-Case: Tweet Sentiment Analysis
 
 Our application features a simple interface where users can enter a tweet to analyze its sentiment. When submitted, the backend runs a sentiment analysis model and displays the predicted sentiment. The user then sees whether the tweet is positive or negative, and can confirm or correct this prediction. This feedback helps improve the model and makes the app more interactive and accurate over time.

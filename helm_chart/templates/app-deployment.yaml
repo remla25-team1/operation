@@ -1,0 +1,36 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-app
+  labels:
+    app: {{ .Release.Name }}-app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: {{ .Release.Name }}-app
+  template:
+    metadata:
+      labels:
+        app: {{ .Release.Name }}-app
+    spec:
+      imagePullSecrets:
+        - name: ghcr-secret
+      containers:
+        - name: app
+          image: "{{ .Values.app.image }}:{{ .Values.app.version }}"
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: {{ .Values.app.containerPort }}
+          envFrom:
+            - configMapRef:
+                name: {{ .Release.Name }}-app-configmap
+            - secretRef:
+                name: {{ .Release.Name }}-secret
+          volumeMounts:
+            - name: shared-data
+              mountPath: /mnt/shared
+      volumes:
+        - name: shared-data
+          hostPath:
+            path: {{ .Values.sharedVolumePath }}
