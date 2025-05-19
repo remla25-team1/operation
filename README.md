@@ -129,14 +129,8 @@ kubectl apply -f /Users/annavisman/stack/TUDelft/REMLA/operation/k8s/application
 # service/model-service created
 
 scp -i .vagrant/machines/ctrl/virtualbox/private_key k8s/application-config.yaml vagrant@192.168.56.100:/home/vagrant/
-application-config.yaml                                                                                                  100%  264   445.3KB/s   00:00    
-
 scp -i .vagrant/machines/ctrl/virtualbox/private_key k8s/model-service.yaml vagrant@192.168.56.100:/home/vagrant/
-# model-service.yaml                                                   100%  786   620.5KB/s   00:00  
-
 scp -i .vagrant/machines/ctrl/virtualbox/private_key k8s/app.yaml vagrant@192.168.56.100:/home/vagrant/
-# app.yaml                                                             100% 1056     1.8MB/s   00:00   
-
 scp -i .vagrant/machines/ctrl/virtualbox/private_key k8s/ingress.yaml vagrant@192.168.56.100:/home/vagrant/
 ```
 NOTE: Any changes you make to the local manifests on host, must be copied manually to the cluster for it to reflect the changes. So, after making changes, you need to run the above ```scp``` commands again, and apply them in the ```ctrl``` node (see ```kubectl apply``` below).
@@ -155,14 +149,8 @@ kubectl get nodes --show-labels
 We apply the manifests (inside the controller):
 ```bash
 kubectl apply -f application-config.yaml
-# configmap/app-config created
-
 kubectl apply -f model-service.yaml
-# deployment.apps/model-service configured
-# service/model-service unchanged
-
 kubectl apply -f app.yaml
-
 kubectl apply -f ingress.yaml
 ```
 
@@ -217,7 +205,7 @@ kubectl get pods -l app=app
 # NAME                  READY   STATUS    RESTARTS   AGE
 # app-8cd6694df-5xnpc   1/1     Running   0          46m
 ```
-Access the app in browser at: ```http://192.168.56.101:31224``` or ```http://192.168.56.102:31224```.
+Access the app in browser at: ```http://192.168.56.101:{port}``` or ```http://192.168.56.102:{port}```.
 Find this port number in the ```kubectl get svc app``` command.
 Even though the ```app``` pod runs on node-2 according to our config, the ```NodePort``` service exposes the app on the same port on every node in the cluster.
 The Kubernetes network proxy forwads the traffic internally to the ```app``` pod once its running.
