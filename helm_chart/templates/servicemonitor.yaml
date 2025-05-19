@@ -13,7 +13,6 @@ spec:
     - port: http 
       path: /metrics
       interval: {{ .Values.monitoring.interval }}
-      scheme: http
   namespaceSelector:
     matchNames:
       - {{ .Release.Namespace }}
