@@ -16,14 +16,17 @@ services:
       - app-network
 
   model-service:
-    build:
-      context: ../model-service
+    image: ${MODEL_SERVICE_IMAGE}:${MODEL_SERVICE_VERSION}
+    ports:
+      - "${MODEL_SERVICE_PORT}:${CONTAINER_PORT}"
     environment:
       - PORT=${CONTAINER_PORT}
       - HOST=0.0.0.0
+      - MODEL_VERSION=${MODEL_VERSION} 
+      - MODEL_DIR=/app/output 
     restart: always
     volumes:
-      - ./app_data:/app/data
+      - ./cached_model:/app/output
     networks:
       - app-network
 
