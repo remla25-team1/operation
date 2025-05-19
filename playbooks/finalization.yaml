@@ -213,10 +213,9 @@
         group: vagrant
         mode: '0644'
 
-    # this fails on arm64.. someone else should try to run this
     - name: Install Istio with default profile
       command: >
-        {{ istio_dir }}/bin/istioctl install -y
-          -f {{ istio_dir }}/samples/operator/config.yaml
+        {{ istio_dir }}/bin/istioctl install --set profile=demo -y
       environment:
         PATH: "{{ istio_dir }}/bin:{{ ansible_env.PATH }}"
+        KUBECONFIG: "/home/vagrant/.kube/config"
