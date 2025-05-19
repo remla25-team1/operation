@@ -1,87 +1,84 @@
+# Define VM configurations
 NUM_WORKERS = 2
-CTRL_CPUS = 1
-CTRL_MEM = 2048 # 2 GB
-WORKER_CPUS  = 2
-WORKER_MEM = 6144 # 6 GB
+CTRL_CPU = 1
+CTRL_MEM = 4*1024
+WRK_CPU = 2
+WRK_MEM = 6*1024
+CL_NETWORK = "192.168.56"
+CTRL_PLAYBOOKS = ["playbooks/general.yaml", "playbooks/ctrl.yaml"]
+WRK_PLAYBOOKS = ["playbooks/general.yaml", "playbooks/node.yaml"]
 
 Vagrant.configure("2") do |config|
-
   config.vm.box = "bento/ubuntu-24.04"
-  config.vm.box_version = "202502.21.0" # for reproducibility
+   
+  # error fix
+  config.vm.provision "shell", privileged: true, inline: <<-SHELL
+    echo "Fixing DNS..."
+    rm -f /etc/resolv.conf
+    echo "nameserver 8.8.8.8" > /etc/resolv.conf
 
-  cluster_network = "192.168.57"
+    echo "vagrant ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/vagrant
+    chmod 0440 /etc/sudoers.d/vagrant
+  SHELL
 
-  config.vm.synced_folder "./ssh_keys", "/vagrant/ssh_keys"
 
-  # Defining the ctrl VM
-  config.vm.define "ctrl" do |ctrl|
 
-    # General settings
-    ctrl.vm.hostname = "k8s-ctrl"
-    ctrl.vm.provider "virtualbox" do |vb|
-      vb.name   = "k8s-ctrl"
-      vb.memory = CTRL_MEM
-      vb.cpus   = CTRL_CPUS
+  # Helper method to configure a VM
+  def configure_vm(vm, hostname, ip, cpus, memory, playbooks, extra_vars)
+    vm.vm.hostname = hostname
+    vm.vm.provider "virtualbox" do |vb|
+      vb.name = hostname
+      vb.memory = memory
+      vb.cpus = cpus
     end
-
-    ctrl.vm.synced_folder "./shared", "/vagrant_shared", create: true
-
-    # Networking
-    ctrl.vm.network "private_network",
-      ip:                "#{cluster_network}.100",
-      adapter:           2
-
-    # Provision with Ansible
-    ctrl_extra_vars = {
-      target: 'ctrl',
-      worker_count: NUM_WORKERS,
-      cluster_network: cluster_network,
-      ctrl_ip: "#{cluster_network}.100"
-    }
-    ctrl.vm.provision "ansible_local" do |ansible|
-      ansible.compatibility_mode = "2.0"
-      ansible.playbook = "playbooks/general.yaml"
-      ansible.extra_vars = ctrl_extra_vars
-    end
-    ctrl.vm.provision "ansible_local" do |ansible|
-      ansible.compatibility_mode = "2.0"
-      ansible.playbook = "playbooks/ctrl.yaml"
-      ansible.extra_vars = ctrl_extra_vars
+    vm.vm.network "private_network", ip: ip, adapter: 2
+    
+    playbooks.each do |playbook|
+        vm.vm.provision "ansible" do |ansible|
+        ansible.verbose = "v"
+        ansible.playbook = playbook
+        ansible.extra_vars = extra_vars
+        ansible.inventory_path = "shared/inventory.ini"
+        end
     end
   end
 
-  # Defining the worker nodes
-  (1..NUM_WORKERS).each do |i|
-    config.vm.define "node-#{i}" do |node|
-      # General settings
-      node.vm.hostname = "k8s-node-#{i}"
-      node.vm.provider "virtualbox" do |vb|
-        vb.name   = "k8s-node-#{i}"
-        vb.memory = WORKER_MEM
-        vb.cpus   = WORKER_CPUS
-      end
+  # Controller VM
+  config.vm.define "ctrl" do |ctrl|
 
-      # Networking
-      node.vm.network "private_network",
-        ip:                "#{cluster_network}.#{100 + i}",
-        adapter:           2
-
-      # Provision with Ansible
-      worker_extra_vars = {           
+    configure_vm(
+      ctrl,
+      "k8s-ctrl",
+      "#{CL_NETWORK}.100",
+      CTRL_CPU,
+      CTRL_MEM,
+      CTRL_PLAYBOOKS,
+      {
+        target: 'ctrl',
         worker_count: NUM_WORKERS,
-        cluster_network: cluster_network,
-        ctrl_ip: "#{cluster_network}.#{100 + i}" 
+        cluster_network: CL_NETWORK,
+        ctrl_ip: "#{CL_NETWORK}.100"
       }
-      node.vm.provision "ansible_local" do |ansible|
-        ansible.compatibility_mode = "2.0"
-        ansible.playbook = "playbooks/general.yaml"
-        ansible.extra_vars = worker_extra_vars
-      end
-      node.vm.provision "ansible_local" do |ansible|
-        ansible.compatibility_mode = "2.0"
-        ansible.playbook = "playbooks/node.yaml"
-        ansible.extra_vars = worker_extra_vars
-      end
+    )
+  end
+
+  # Worker VMs
+  (1..NUM_WORKERS).each do |i|
+
+    config.vm.define "node-#{i}" do |worker|
+      configure_vm(
+        worker,
+        "k8s-node-#{i}",
+        "#{CL_NETWORK}.#{100 + i}",
+        WRK_CPU,
+        WRK_MEM,
+        WRK_PLAYBOOKS,
+        { target: 'node',
+        worker_count: NUM_WORKERS,
+        cluster_network: CL_NETWORK,
+        ctrl_ip: "#{CL_NETWORK}.100"
+    }
+    )
     end
   end
 end
