@@ -88,7 +88,7 @@ Approved PR: https://github.com/remla25-team1/lib-version/pull/3
 ### -- Vivian: --
 Created PR: 
 
-Approved PR: 
+Approved PR: https://github.com/remla25-team1/operation/pull/6
 
 ### -- Yifan: --
 Created PR: 
