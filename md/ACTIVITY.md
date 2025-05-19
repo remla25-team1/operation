@@ -30,7 +30,7 @@ Approved PR: https://github.com/remla25-team1/model-training/pull/1 | https://gi
 # A2:
 
 ### -- Anna: --
-Created PR: 
+Created PR with final working version of A2: https://github.com/remla25-team1/operation/pull/6
 
 Approved Sofia's PR with A2 code: https://github.com/remla25-team1/operation/pull/3
 
@@ -77,7 +77,8 @@ Approved PR:
 ### -- Anna: --
 Created PR: 
 
-Approved PR: 
+Approved PR: https://github.com/remla25-team1/operation/pull/8
+That I also co-authored in case that is important for the knock-out criteria/
 
 ### -- Sofia: --
 Created PR: https://github.com/remla25-team1/model-service/pull/6
