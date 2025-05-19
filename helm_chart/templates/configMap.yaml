@@ -1,0 +1,20 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Release.Name }}-app-configmap
+data:
+{{- range $key, $val := .Values.app.env }}
+  {{ $key }}: "{{ $val }}"
+{{- end }}
+  MODEL_SERVICE_HOST: {{ printf "%s-model-service" .Release.Name | quote }}
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Release.Name }}-model-configmap
+data:
+{{- range $key, $val := .Values.model.env }}
+  {{ $key }}: "{{ $val }}"
+{{- end }}
+

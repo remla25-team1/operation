@@ -1,0 +1,29 @@
+app:
+  image: ghcr.io/remla25-team1/app
+  version: 0.0.7-pre02
+  containerPort: 8080
+  servicePort: 8080
+  env:
+    APP_VERSION: latest
+    MODEL_SERVICE_VERSION: latest
+    MODEL_SERVICE_PORT: 8081
+    PORT: 8080
+
+model:
+  image: ghcr.io/remla25-team1/model-service
+  version: latest
+  containerPort: 8080
+  servicePort: 8081
+  env:
+    PORT: 8080
+    HOST: "0.0.0.0"
+
+ingress:
+  enabled: true
+  className: nginx
+  path: /
+
+secret:
+  key: "secret" 
+
+sharedVolumePath: /mnt/shared
