@@ -63,7 +63,7 @@ Approved PR: https://github.com/remla25-team1/lib-ml/pull/2 (related to A1)
 ### -- Zuji: --
 Created PR: https://github.com/remla25-team1/operation/pull/2 (related to A2)
 
-Approved PR: 
+Approved PR: https://github.com/remla25-team1/app/pull/8 (related to A1)
 
 # Week 3:
 
