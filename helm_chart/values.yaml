@@ -1,6 +1,6 @@
 app:
   image: ghcr.io/remla25-team1/app
-  version: 0.0.7-pre02
+  version: latest
   containerPort: 8080
   servicePort: 8080
   env:
