@@ -21,7 +21,7 @@ spec:
       - name: model-service
         image: ghcr.io/remla25-team1/model-service:latest
         ports:
-        - containerPort: 8081
+        - containerPort: 8081 # these are still hardcoded, and should be coming from an env i think
         envFrom:
         - configMapRef:
             name: application-config
@@ -47,5 +47,5 @@ spec:
     app: model-service
   ports:
     - protocol: TCP
-      port: 8081
-      targetPort: 8081
+      port: 8081 # exposed port
+      targetPort: 8081 # port used inside the pod

@@ -1,3 +1,4 @@
 .vagrant
 shared/admin.conf
+join_cluster.sh
 cached_model/
