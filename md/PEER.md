@@ -15,7 +15,7 @@ lib-version: https://github.com/remla25-team1/lib-version
 ## Comments for A3:
 We plan on combining all manual steps of migrating the application to Kubernetes cluster in another playbook.
 
-As an outsider you will not be able to do replicate this because you do not have a PAT that lets you pull build images of our application from GitHub. Instead, see the instructions we use for running in our[```README.md```](https://github.com/remla25-team1/operation/blob/main/README.md`) (click to follow link).
+As an outsider you will not be able to do replicate this because you do not have a PAT that lets you pull build images of our application from GitHub. Instead, see the instructions we use for running in our[```README.md```](https://github.com/remla25-team1/operation/blob/main/README.md) (click to follow link).
 
 
 ## Comments for A2:
