@@ -63,4 +63,31 @@ Created PR: https://github.com/remla25-team1/operation/pull/2
 Approved PR: 
 
 # A3:
+
+### -- Anna: --
+Created PR: 
+
+Approved PR: 
+
+### -- Sofia: --
+Created PR: https://github.com/remla25-team1/model-service/pull/6
+
+Approved PR: https://github.com/remla25-team1/lib-version/pull/3
+
+### -- Vivian: --
+Created PR: 
+
+Approved PR: 
+
+### -- Yifan: --
+Created PR: 
+
+Approved PR:
+
+### -- Zuji: --
+Created PR: https://github.com/remla25-team1/lib-version/pull/3
+
+Approved PR: https://github.com/remla25-team1/operation/pull/5
+
+# A4:
 ...
