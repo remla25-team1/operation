@@ -12,10 +12,15 @@ app: https://github.com/remla25-team1/app
 
 lib-version: https://github.com/remla25-team1/lib-version
 
+## Comments for A3:
+We plan on combining all manual steps of migrating the application to Kubernetes cluster in another playbook.
+
+As an outsider you will not be able to do replicate this because you do not have a PAT that lets you pull build images of our application from GitHub. Instead, see the instructions we use for running in our ```README.md```.
+
 
 ## Comments for A2:
 
-All steps work locally. Navigate into the ```operation``` directory and run ```vagrant up``` in the terminal (ensure VirtualBox is installed.) Logs of the setup will appear in the terminal. When done, run ```vagrant destroy`` for cleanup.
+All steps work locally. Navigate into the ```operation``` directory and run ```vagrant up``` in the terminal (ensure VirtualBox is installed.) Logs of the setup will appear in the terminal. When done, run ```vagrant destroy``` for cleanup.
 
 ## Comments for A1:
 
