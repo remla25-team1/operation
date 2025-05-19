@@ -2,6 +2,8 @@ apiVersion: v1
 kind: Service
 metadata:
   name: {{ .Release.Name }}-app
+  labels:
+    app.kubernetes.io/name: tweet-sentiment 
 spec:
   selector:
     app: {{ .Release.Name }}-app
