@@ -16,8 +16,9 @@ services:
       - app-network
 
   model-service:
-    build:
-      context: ../model-service
+    image: ${MODEL_SERVICE_IMAGE}:${MODEL_SERVICE_VERSION}
+    ports:
+      - "${MODEL_SERVICE_PORT}:${CONTAINER_PORT}"
     environment:
       - PORT=${CONTAINER_PORT}
       - HOST=0.0.0.0
