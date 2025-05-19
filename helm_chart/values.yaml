@@ -1,6 +1,6 @@
 app:
   image: ghcr.io/remla25-team1/app
-  version: latest
+  version: 0.0.7-pre09
   containerPort: 8080
   servicePort: 8080
   env:
@@ -25,5 +25,10 @@ ingress:
 
 secret:
   key: "secret" 
+
+monitoring:
+  enabled: true
+  
+  release: prometheus  
 
 sharedVolumePath: /mnt/shared

@@ -53,9 +53,19 @@ Approved PR: https://github.com/remla25-team1/app/pull/4
 Approved PR: https://github.com/remla25-team1/model-service/pull/3
 
 ### -- Yifan: --
-Created PR:
+Created PR: https://github.com/remla25-team1/app/pull/4
 
-Approved PR:
+Created PR: https://github.com/remla25-team1/model-service/pull/3
+
+Created PR: https://github.com/remla25-team1/operation/pull/4
+
+Approved PR: https://github.com/remla25-team1/model-training/pull/2
+
+Approved PR: https://github.com/remla25-team1/model-training/pull/3
+
+Approved PR: https://github.com/remla25-team1/model-training/pull/4
+
+Approved PR: https://github.com/remla25-team1/lib-ml/pull/2
 
 ### -- Zuji: --
 Created PR: https://github.com/remla25-team1/operation/pull/2
