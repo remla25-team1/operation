@@ -238,6 +238,70 @@ kubectl get configmaps
 # application-config   6      52m
 # kube-root-ca.crt     1      4h33m
 ```
+
+
+
+## Helm
+
+```bash
+helm install tweet-sentiment-app ./helm_chart     
+```
+
+after any change you have done
+```bash
+helm upgrade --install tweet-sentiment ./helm_chart
+
+# or
+helm upgrade --install tweet-sentiment ./helm_chart -f helm_chart/values.yaml
+```
+
+## Setup Promethues
+
+```bash
+helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+
+helm repo update
+
+helm install prometheus prometheus-community/kube-prometheus-stack \
+  -n monitoring --create-namespace \
+  -f dashboard/grafana-custom-values.yaml
+
+```
+
+## Grafana
+We provide a pre-configured dashboard for monitoring with 4 pannels:
+
+- Request count by sentiment (sentiment_requests_total)
+
+- Average response time (sentiment_response_time_seconds)
+
+- Correction submission stats (correction_requests_total)
+
+- In-progress requests (sentiment_requests_in_progress)
+
+### Auto-load via ConfigMap 
+```bash
+kubectl apply -f dashboard/tweet-sentiment-dashboard-configmap.yaml
+
+```
+### Import the dashboard manually
+- Open Grafana 
+   - Access to grafana:
+      ```bash
+      kubectl port-forward svc/prometheus-grafana -n monitoring 3000:80
+      ```
+      - Then open: http://localhost:3000
+      - Username: admin
+      - Password: prom-operator
+      
+- Go to Dashboards → Import
+
+- Upload: monitoring/tweet-sentiment-dashboard.json
+
+- Select Prometheus as data source, click Import
+
+
+
 ## Use-Case: Tweet Sentiment Analysis
 
 Our application features a simple interface where users can enter a tweet to analyze its sentiment. When submitted, the backend runs a sentiment analysis model and displays the predicted sentiment. The user then sees whether the tweet is positive or negative, and can confirm or correct this prediction. This feedback helps improve the model and makes the app more interactive and accurate over time.
