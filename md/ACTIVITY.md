@@ -68,7 +68,7 @@ Approved PR: https://github.com/remla25-team1/app/pull/8 (related to A1)
 # Week 3:
 
 ### -- Anna: --
-Created PR: 
+Created PR: https://github.com/remla25-team1/operation/pull/9 (fixes after setting up the cluster in the below PR)
 
 Approved PR: https://github.com/remla25-team1/operation/pull/8 (related to A3)
 - That I also co-authored in case that is important for the knock-out criteria
