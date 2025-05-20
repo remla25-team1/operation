@@ -79,7 +79,7 @@ Created PR: https://github.com/remla25-team1/model-service/pull/6 (related to A1
 Approved PR: https://github.com/remla25-team1/lib-version/pull/3 (related to A1)
 
 ### -- Vivian: --
-Created PR: https://github.com/remla25-team1/operation/pull/10 (related to A2)
+Created PR: https://github.com/remla25-team1/operation/pull/11 (related to A2)
 
 Approved PR: https://github.com/remla25-team1/operation/pull/6 (related to A2)
 
