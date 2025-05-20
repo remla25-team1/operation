@@ -41,7 +41,7 @@ Approved PR: https://github.com/remla25-team1/operation/pull/2 (related to A2)
 
 ### -- Vivian: --
 
-Created PR: https://github.com/remla25-team1/model-training/pull/4 (related to A1)
+Created PR: https://github.com/remla25-team1/model-training/pull/2 (related to A1)
 
 Created PR: https://github.com/remla25-team1/lib-ml/pull/2 (related to A1)
 
@@ -89,7 +89,6 @@ Created PR: https://github.com/remla25-team1/operation/pull/8 (related to A3)
 Created PR: https://github.com/remla25-team1/app/pull/8  (related to A3)
 
 Reviewed PR: https://github.com/remla25-team1/operation/pull/6 (related to A2)
-
 
 
 ### -- Zuji: --
