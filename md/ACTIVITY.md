@@ -1,4 +1,4 @@
-# Week 1:
+# Week 2:
 
 ### -- Anna: --
 Created PR: https://github.com/remla25-team1/lib-version/pull/1 (related to A1)
@@ -27,7 +27,7 @@ Created PR: https://github.com/remla25-team1/operation/pull/1 (related to A1)
 
 Approved PR: https://github.com/remla25-team1/model-training/pull/1 | https://github.com/remla25-team1/lib-ml/pull/1 (related to A1)
  
-# Week 2:
+# Week 3:
 
 ### -- Anna: --
 Created PR: https://github.com/remla25-team1/operation/pull/6 (related to A2)
@@ -65,7 +65,7 @@ Created PR: https://github.com/remla25-team1/operation/pull/2 (related to A2)
 
 Approved PR: https://github.com/remla25-team1/app/pull/8 (related to A1)
 
-# Week 3:
+# Week 4:
 
 ### -- Anna: --
 Created PR: https://github.com/remla25-team1/operation/pull/9 (fixes after setting up the cluster in the below PR)
@@ -96,5 +96,5 @@ Created PR: https://github.com/remla25-team1/lib-version/pull/3 (related to A1)
 
 Approved PR: https://github.com/remla25-team1/operation/pull/5 (related to A1)
 
-# Week 4:
+# Week 5:
 ...
