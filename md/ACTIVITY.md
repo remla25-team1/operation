@@ -108,7 +108,7 @@ Created PR:
 Approved PR: 
 
 ### -- Vivian: --
-Created PR: 
+Created PR: https://github.com/remla25-team1/model-training/pull/6 (related to A4)
 
 Approved PR: https://github.com/remla25-team1/model-training/pull/5 (related to A4)
 
