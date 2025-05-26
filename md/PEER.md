@@ -1,19 +1,18 @@
 ## Repository Links:
-
-operation: https://github.com/remla25-team1/operation
-
-model training: https://github.com/remla25-team1/model-training
-
-model service: https://github.com/remla25-team1/model-service
-
-lib-ml: https://github.com/remla25-team1/lib-ml
-
-app: https://github.com/remla25-team1/app
-
-lib-version: https://github.com/remla25-team1/lib-version
+<!-- REPO LINKS START -->
+- **operation:** [repo](https://github.com/remla25-team1/operation) | No release out yet
+- **model training:** [repo](https://github.com/remla25-team1/model-training) | latest release: [`v0.0.9-pre-20250526-001`](https://github.com/remla25-team1/model-training/releases/latest)
+- **model service:** [repo](https://github.com/remla25-team1/model-service) | No release out yet
+- **lib-ml:** [repo](https://github.com/remla25-team1/lib-ml) | latest release: [`v0.0.1-pre-20250516-001`](https://github.com/remla25-team1/lib-ml/releases/latest)
+- **app:** [repo](https://github.com/remla25-team1/app) | latest release: [`v0.0.2`](https://github.com/remla25-team1/app/releases/latest)
+- **lib-version:** [repo](https://github.com/remla25-team1/lib-version) | latest release: [`v0.1.4`](https://github.com/remla25-team1/lib-version/releases/latest)
+<!-- REPO LINKS END -->
 
 ## Comments for A4:
-Latest build can be found at 
+Latest successful build can be found at https://github.com/remla25-team1/model-training/releases.
+Files to inspect are our tests in: https://github.com/remla25-team1/model-training/tree/main/tests
+And our testing Github workflow: https://github.com/remla25-team1/model-training/blob/main/.github/workflows/ml-test.yml
+Furthermore, the Cookiecutter template is implemented in [```model-training```](https://github.com/remla25-team1/model-training)too (click to follow link).
 
 ## Comments for A3:
 We plan on combining all manual steps of migrating the application to Kubernetes cluster in another playbook.
@@ -33,5 +32,4 @@ What can be reviewed:
 - All repos. Though some functionality might be missing for some of them. 
 
 What can not be reviewed:
-- We did not manage to version the containers automatically. As of now we have to provide a git tag manually to trigger the workflow. 
-
+- We did not manage to version the containers automatically. As of now we have to provide a git tag manually to trigger the workflow.
