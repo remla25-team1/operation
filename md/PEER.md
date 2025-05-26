@@ -12,6 +12,9 @@ app: https://github.com/remla25-team1/app
 
 lib-version: https://github.com/remla25-team1/lib-version
 
+## Comments for A4:
+Latest build can be found at 
+
 ## Comments for A3:
 We plan on combining all manual steps of migrating the application to Kubernetes cluster in another playbook.
 

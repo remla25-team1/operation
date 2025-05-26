@@ -97,9 +97,10 @@ Approved PR: https://github.com/remla25-team1/operation/pull/5 (related to A1)
 
 # Week 5:
 ### -- Anna: --
-Created PR: 
+Created PR: https://github.com/remla25-team1/model-training/pull/8 (related to A4)
 
-Approved PR: 
+Approved PR: https://github.com/remla25-team1/lib-ml/pull/3 (related to A4)
+        https://github.com/remla25-team1/model-training/pull/7 (related to A4)
 
 ### -- Sofia: --
 Created PR: https://github.com/remla25-team1/model-training/pull/5 (related to A4)
@@ -119,5 +120,5 @@ Approved PR:
 ### -- Zuji: --
 Created PR: 
 
-Approved PR: 
+Approved PR: https://github.com/remla25-team1/model-training/pull/8
 
