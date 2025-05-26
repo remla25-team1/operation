@@ -117,7 +117,7 @@ Created PR: https://github.com/remla25-team1/model-training/pull/7 (related to A
 Approved PR: https://github.com/remla25-team1/operation/pull/11 (related to A2)
 
 ### -- Zuji: --
-Created PR: 
+Created PR:  
 
-Approved PR: 
+Approved PR: https://github.com/remla25-team1/model-training/pull/8 
 
