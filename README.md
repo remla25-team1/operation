@@ -54,7 +54,8 @@ Navigate into ```operation``` dir and run:
 ```bash
 vagrant up
 
-ansible-playbook -u vagrant -i 192.168.56.100, playbooks/finalization.yaml
+# So that the cluster_network and ctrl_ip are not hardcoded
+ansible-playbook -u vagrant -i 192.168.56.100, playbooks/finalization.yaml --extra-vars "cluster_network=192.168.56 ctrl_ip=192.168.56.100"
 ```
 
 To tear down the cluster run:
@@ -327,7 +328,7 @@ kubectl apply -f dashboard/tweet-sentiment-dashboard-configmap.yaml
 
 
 
->>>>>>> main
+
 ## Use-Case: Tweet Sentiment Analysis
 
 Our application features a simple interface where users can enter a tweet to analyze its sentiment. When submitted, the backend runs a sentiment analysis model and displays the predicted sentiment. The user then sees whether the tweet is positive or negative, and can confirm or correct this prediction. This feedback helps improve the model and makes the app more interactive and accurate over time.
@@ -357,7 +358,12 @@ Our application features a simple interface where users can enter a tweet to ana
 * [lib-version](https://github.com/remla25-team1/lib-version)
 * [operation](https://github.com/remla25-team1/operation)
 
-
+## Auto-update version tags in PEER.md
+Navigate to project root and run (in a virtual environment):
+```
+pip install -r scripts/requirements.txt
+python scripts/peer-release.py
+```
 ## Progress Log
 
 **model-service**: Implemented core sentiment analysis module in `model-service`, leveraging a baseline logistic regression model for binary classification, and designed the HTTP endpoint to accept raw comments and return sentiment labels.
