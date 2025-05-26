@@ -328,7 +328,7 @@ kubectl apply -f dashboard/tweet-sentiment-dashboard-configmap.yaml
 
 
 
->>>>>>> main
+
 ## Use-Case: Tweet Sentiment Analysis
 
 Our application features a simple interface where users can enter a tweet to analyze its sentiment. When submitted, the backend runs a sentiment analysis model and displays the predicted sentiment. The user then sees whether the tweet is positive or negative, and can confirm or correct this prediction. This feedback helps improve the model and makes the app more interactive and accurate over time.
