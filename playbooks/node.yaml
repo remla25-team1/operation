@@ -3,6 +3,11 @@
 - hosts: node-1:node-2
   become: true
   tasks:
+    - name: Check if node is already part of the cluster
+      ansible.builtin.stat:
+        path: /etc/kubernetes/kubelet.conf
+      register: kubelet_conf
+
     - name: Join this node to the Kubernetes cluster
       ansible.builtin.command: bash /vagrant/join_cluster.sh
       args:

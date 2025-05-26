@@ -54,7 +54,8 @@ Navigate into ```operation``` dir and run:
 ```bash
 vagrant up
 
-ansible-playbook -u vagrant -i 192.168.56.100, playbooks/finalization.yaml
+# So that the cluster_network and ctrl_ip are not hardcoded
+ansible-playbook -u vagrant -i 192.168.56.100, playbooks/finalization.yaml --extra-vars "cluster_network=192.168.56 ctrl_ip=192.168.56.100"
 ```
 
 To tear down the cluster run:
@@ -327,7 +328,7 @@ kubectl apply -f dashboard/tweet-sentiment-dashboard-configmap.yaml
 
 
 
->>>>>>> main
+
 ## Use-Case: Tweet Sentiment Analysis
 
 Our application features a simple interface where users can enter a tweet to analyze its sentiment. When submitted, the backend runs a sentiment analysis model and displays the predicted sentiment. The user then sees whether the tweet is positive or negative, and can confirm or correct this prediction. This feedback helps improve the model and makes the app more interactive and accurate over time.

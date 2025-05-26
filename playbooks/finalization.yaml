@@ -11,9 +11,18 @@
     ansible_python_interpreter: /usr/bin/python3
     istio_version: "1.25.2"              # ← ADD THIS HERE
 
-    # these should already be passed in via --extra-vars...
-    cluster_network: "192.168.56"
-    ctrl_ip:         "192.168.56.100"
+  pre_tasks:
+  - name: Assert that cluster_network is provided
+    assert:
+      that:
+        - cluster_network is defined
+      fail_msg: "You must provide 'cluster_network' via --extra-vars."
+
+  - name: Assert that ctrl_ip is provided
+    assert:
+      that:
+        - ctrl_ip is defined
+      fail_msg: "You must provide 'ctrl_ip' via --extra-vars."
 
   tasks:
     - name: Install Kubernetes Python client
@@ -100,7 +109,9 @@
         helm upgrade --install ingress-nginx ingress-nginx/ingress-nginx \
           --namespace ingress-nginx --create-namespace \
           --set controller.ingressClassResource.name=nginx \
-          --set controller.ingressClassResource.controllerValue=k8s.io/ingress-nginx
+          --set controller.ingressClassResource.controllerValue=k8s.io/ingress-nginx \
+          --set controller.service.type=LoadBalancer \
+          --set controller.service.loadBalancerIP={{ cluster_network }}.90
       environment:
         KUBECONFIG: /etc/kubernetes/admin.conf
 
@@ -122,6 +133,40 @@
           --set ingress.hosts[0].paths[0].pathType=Prefix
       environment:
         KUBECONFIG: /etc/kubernetes/admin.conf
+
+    # - name: Update dashboard ingress to be hostless
+    #   k8s:
+    #     state: present
+    #     definition:
+    #       apiVersion: networking.k8s.io/v1
+    #       kind: Ingress
+    #       metadata:
+    #         name: kubernetes-dashboard
+    #         namespace: kubernetes-dashboard
+    #         annotations:
+    #           nginx.ingress.kubernetes.io/ssl-passthrough: "true"
+    #           nginx.ingress.kubernetes.io/backend-protocol: "HTTPS"
+    #           nginx.ingress.kubernetes.io/rewrite-target: /
+    #       spec:
+    #         ingressClassName: nginx
+    #         rules:
+    #           - http:
+    #               paths:
+    #                 - path: /
+    #                   pathType: Prefix
+    #                   backend:
+    #                     service:
+    #                       name: kubernetes-dashboard
+    #                       port:
+    #                         number: 443
+    #     kubeconfig: /etc/kubernetes/admin.conf
+
+    # - name: Wait for dashboard ingress to be ready
+    #   command: kubectl wait --for=condition=Ready ingress/kubernetes-dashboard -n kubernetes-dashboard --timeout=120s
+    #   environment:
+    #     KUBECONFIG: /etc/kubernetes/admin.conf
+    #   register: ingress_wait
+    #   failed_when: ingress_wait.rc != 0
 
     # Step 22b: Dashboard Admin RBAC & Token
     - name: Create ServiceAccount for dashboard admin
@@ -215,7 +260,13 @@
 
     - name: Install Istio with default profile
       command: >
-        {{ istio_dir }}/bin/istioctl install --set profile=demo -y
+        {{ istio_dir }}/bin/istioctl install \
+        --set profile=demo \
+        --set components.ingressGateways[0].name=istio-ingressgateway \
+        --set components.ingressGateways[0].enabled=true \
+        --set values.gateways.istio-ingressgateway.type=LoadBalancer \
+        --set values.gateways.istio-ingressgateway.loadBalancerIP={{ cluster_network }}.91 \
+        -y
       environment:
         PATH: "{{ istio_dir }}/bin:{{ ansible_env.PATH }}"
         KUBECONFIG: "/home/vagrant/.kube/config"
