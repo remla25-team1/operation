@@ -1,0 +1,80 @@
+- name: Deploy application manifests & label nodes
+  hosts: ctrl
+  vars:
+    manifests:
+      - model-service.yaml
+      - app.yaml
+      - ingress.yaml
+      - application-config.yaml
+  tasks:
+    - name: Copy kubeconfig from controller to vagrant home directory
+      ansible.builtin.shell: sudo cat /etc/kubernetes/admin.conf > /home/vagrant/.kube/config
+      args:
+        creates: /home/vagrant/.kube/config  # skip if already exists
+
+    - name: Fix permissions on kubeconfig
+      ansible.builtin.file:
+        path: /home/vagrant/.kube/config
+        owner: vagrant
+        group: vagrant
+        mode: '0600'
+
+    - name: Create (or refresh) GHCR imagePullSecret
+      ansible.builtin.shell: >
+        kubectl create secret docker-registry ghcr-secret
+        --docker-server=ghcr.io
+        --docker-username={{ github_username }}
+        --docker-password={{ github_pat }}
+        --docker-email={{ github_email }}
+      environment:
+        KUBECONFIG: /home/vagrant/.kube/config
+      register: secret_out
+      failed_when: secret_out.rc not in [0,1]
+
+    - name: Copy Kubernetes manifests to controller
+      ansible.builtin.copy:
+        src: "k8s/{{ item }}"
+        dest: /home/vagrant/{{ item }}
+        mode: '0644'
+      loop: "{{ manifests }}"
+
+    - name: Apply Kubernetes manifests
+      ansible.builtin.shell: kubectl apply -f {{ item }}
+      args:
+        chdir: /home/vagrant
+      environment:
+        KUBECONFIG: /home/vagrant/.kube/config
+      loop: "{{ manifests }}"
+
+    - name: Label application nodes
+      environment:
+        KUBECONFIG: /home/vagrant/.kube/config
+      command: kubectl label node {{ item.name }} node-role={{ item.role }} --overwrite
+      loop:
+        - { name: "k8s-node-1", role: "model" }
+        - { name: "k8s-node-2", role: "app" }
+
+    - name: Wait for pods to be ready
+      environment:
+        KUBECONFIG: /home/vagrant/.kube/config
+      command: kubectl wait --for=condition=Ready pods --all --timeout=120s
+
+    - name: Display node labels
+      ansible.builtin.command: kubectl get nodes --show-labels
+      environment:
+        KUBECONFIG: /home/vagrant/.kube/config
+      register: nodes_out
+
+    - name: Print node label output
+      ansible.builtin.debug:
+        var: nodes_out.stdout_lines
+
+    - name: Display pod placement
+      ansible.builtin.command: kubectl get pods -o wide
+      environment:
+        KUBECONFIG: /home/vagrant/.kube/config
+      register: pods_out
+
+    - name: Print pod distribution
+      ansible.builtin.debug:
+        var: pods_out.stdout_lines
