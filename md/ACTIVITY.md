@@ -134,9 +134,9 @@ Created PR:
 Approved PR:
 
 ### -- Vivian: --
-Created PR: https://github.com/remla25-team1/model-training/pull/9 (related to A4)
+Created PR: 
 
-Approved PR: 
+Approved PR: https://github.com/remla25-team1/model-training/pull/9 (related to A4)
 
 ### -- Yifan: --
 Created PR: 
