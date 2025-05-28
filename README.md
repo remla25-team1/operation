@@ -56,6 +56,8 @@ vagrant up
 
 # So that the cluster_network and ctrl_ip are not hardcoded
 ansible-playbook -u vagrant -i 192.168.56.100, playbooks/finalization.yaml --extra-vars "cluster_network=192.168.56 ctrl_ip=192.168.56.100"
+
+
 ```
 
 To tear down the cluster run:
