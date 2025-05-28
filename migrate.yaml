@@ -63,29 +63,27 @@
       become: yes
       become_user: vagrant
 
-    # Uncomment the following if you want to wait and display pod/node info
+    - name: Wait for pods to be ready
+      environment:
+        KUBECONFIG: /home/vagrant/.kube/config
+      command: kubectl wait --for=condition=Ready pods --all --timeout=120s
 
-    # - name: Wait for pods to be ready
-    #   environment:
-    #     KUBECONFIG: /home/vagrant/.kube/config
-    #   command: kubectl wait --for=condition=Ready pods --all --timeout=120s
+    - name: Display node labels
+      ansible.builtin.command: kubectl get nodes --show-labels
+      environment:
+        KUBECONFIG: /home/vagrant/.kube/config
+      register: nodes_out
 
-    # - name: Display node labels
-    #   ansible.builtin.command: kubectl get nodes --show-labels
-    #   environment:
-    #     KUBECONFIG: /home/vagrant/.kube/config
-    #   register: nodes_out
+    - name: Print node label output
+      ansible.builtin.debug:
+        var: nodes_out.stdout_lines
 
-    # - name: Print node label output
-    #   ansible.builtin.debug:
-    #     var: nodes_out.stdout_lines
+    - name: Display pod placement
+      ansible.builtin.command: kubectl get pods -o wide
+      environment:
+        KUBECONFIG: /home/vagrant/.kube/config
+      register: pods_out
 
-    # - name: Display pod placement
-    #   ansible.builtin.command: kubectl get pods -o wide
-    #   environment:
-    #     KUBECONFIG: /home/vagrant/.kube/config
-    #   register: pods_out
-
-    # - name: Print pod distribution
-    #   ansible.builtin.debug:
-    #     var: pods_out.stdout_lines
+    - name: Print pod distribution
+      ansible.builtin.debug:
+        var: pods_out.stdout_lines
