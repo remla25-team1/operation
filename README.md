@@ -234,7 +234,64 @@ kubectl apply -f dashboard/tweet-sentiment-dashboard-configmap.yaml
 
 - Select Prometheus as data source, click Import
 
+## Istio
+```bash
+kubectl label namespace default istio-injection=enabled --overwrite
 
+kubectl rollout restart deployment/model-service
+kubectl rollout restart deployment/app
+
+kubectl apply -f k8s/app.yaml # changed NodePort to ClusterIP in app.yaml
+
+kubectl apply -f k8s/istio/gateway.yaml
+kubectl apply -f k8s/istio/destinationrules.yaml
+kubectl apply -f k8s/istio/virtualservices.yaml
+
+
+kubectl get gateway app-gateway
+
+kubectl get destinationrule -o wide
+
+kubectl get virtualservice -o wide
+
+
+kubectl delete deployment app-v1 
+kubectl delete deployment app-v2
+
+kubectl apply -f k8s/app.yaml 
+kubectl apply -f k8s/app-v1.yaml
+kubectl apply -f k8s/app-v2.yaml
+
+kubectl rollout restart deployment app-v1
+kubectl rollout restart deployment app-v2
+
+kubectl rollout status deployment app-v1
+kubectl rollout status deployment app-v2
+
+kubectl get pods --show-labels
+
+# find the INGRES-IP (external ip below)
+kubectl -n istio-system get svc istio-ingressgateway
+# NAME                   TYPE           CLUSTER-IP     EXTERNAL-IP     PORT(S)                                                                      AGE
+# istio-ingressgateway   LoadBalancer   10.98.33.145   192.168.56.91   15021:32752/TCP,80:31897/TCP,443:31145/TCP,31400:30170/TCP,15443:31601/TCP   18m
+
+# testing sticky sessions
+for i in {1..10}; do
+  curl -s http://<INGRESS_IP>/
+  echo
+done
+
+curl -H "user-group: canary" http://<INGRESS_IP>/
+
+for i in {1..10}; do
+  curl -s http://192.168.56.91/
+  echo
+done
+
+curl -H "user-group: canary" http://192.168.56.91/
+
+
+```
 
 
 ## Use-Case: Tweet Sentiment Analysis
