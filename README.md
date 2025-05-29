@@ -289,8 +289,6 @@ for i in {1..10}; do
 done
 
 curl -H "user-group: canary" http://192.168.56.91/
-
-
 ```
 
 
