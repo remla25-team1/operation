@@ -124,9 +124,14 @@ Approved PR: https://github.com/remla25-team1/model-training/pull/8
 
 # Week 6
 ### -- Anna: --
+<<<<<<< HEAD
 Created PR: https://github.com/remla25-team1/model-training/pull/9 (related to A4)
 
 https://github.com/remla25-team1/operation/pull/12 (related to improvements on A3)
+=======
+Created PR: 
+
+>>>>>>> 71251e3cabd6c0a33f0dfcd958499f0f32b32ec6
 Approved PR: 
 
 ### -- Sofia: --
