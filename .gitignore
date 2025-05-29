@@ -3,3 +3,5 @@ shared/admin.conf
 join_cluster.sh
 cached_model/
 .DS_Store
+kubeconfig-vagrant
+venv
