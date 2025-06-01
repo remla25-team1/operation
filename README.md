@@ -20,6 +20,7 @@ Make sure you have installed:
 - **Kubectl**
 
 ## Clone the Repository
+
 Clone the **operation** repository from GitHub (e.g., using SSH):
 
    ```bash
@@ -30,6 +31,7 @@ Clone the **operation** repository from GitHub (e.g., using SSH):
 ## Running Application on Kubernetes Cluster
 Navigate into ```operation``` dir and run the code below.
 Set up a ```imagePullSecrets``` for GHCR: first generate a new token (classic) on Github. Give it scopes ```read:packages, repo```. Copy the token and paste it in the command below:
+
 ```bash
 vagrant up
 
@@ -37,16 +39,13 @@ ansible-playbook -u vagrant -i 192.168.56.100, playbooks/finalization.yaml --ext
 
 ansible-playbook -i shared/inventory.ini migrate.yaml \
   --ask-become-pass \
-  -e github_username=<your-github-username> \ \
-  -e github_pat=<your-github-pat> \ \
+  -e github_username=<your-github-username> \
+  -e github_pat=<your-github-pat> \
   -e github_email=<your-email>
+
 ```
 
 When running the ```migrate.yaml``` playbook, you will be asked for your ```BECOME``` password. This is so that the playbook can run commands in ```sudo``` mode. Simply fill in your host password here.
-So that the cluster_network and ctrl_ip are not hardcoded
-```
-ansible-playbook -u vagrant -i 192.168.56.100, playbooks/finalization.yaml --extra-vars "cluster_network=192.168.56 ctrl_ip=192.168.56.100"
-```
 
 To tear down the cluster run:
 ```bash
@@ -54,6 +53,7 @@ vagrant destroy
 
 docker network ls # here you can check if the network is still live and remove it 
 ```
+
 
 All VMs mount the same shared VirtualBox folder as /mnt/shared into the VM. You can check this yourself. Here is a little proof:
 ```bash
