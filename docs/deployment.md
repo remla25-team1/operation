@@ -157,52 +157,52 @@ Below is a concise inventory of every Kubernetes object, grouped by category. No
 
 ## 3. Data Flow & Dynamic Routing 🔄
 
-Below is a sequence diagram illustrating how a tweet inference request moves through the system, where metrics are recorded, and where alerts may fire.
+Below is a sequence diagram illustrating how a tweet inference request moves through the system:
 
 ```mermaid
 sequenceDiagram
-  autonumber
-  actor U as Browser (app.local)
-  participant I as Ingress (192.168.56.90)
-  participant S1 as Service “app”
-  participant P1 as Pod “app” (3 replicas)
-  participant S2 as Service “model-service”
-  participant P2 as Pod “model-service” (2 replicas)
-  participant PR as Prometheus
-  participant GF as Grafana
-  participant AM as Alertmanager
+    autonumber
+    actor User as Browser
+    participant Ingress as Ingress(192.168.56.90)
+    participant AppService as Service "app"
+    participant AppPod as Pod "app"
+    participant ModelService as Service "model-service"
+    participant ModelPod as Pod "model-service"
+    participant Prom as Prometheus
+    participant Graf as Grafana
+    participant Alert as Alertmanager
 
-  U->>I: GET /predict?tweet="I love cats!"
-  I->>S1: Forward to Service “app”
-  S1->>P1: Route to one of 3 “app” Pods
+    User->>Ingress: GET /predict?tweet="I love cats!"
+    Ingress->>AppService: Forward request
+    AppService->>AppPod: Route to replica
+    
+    Note right of AppPod: Metrics recorded:
+    - sentiment_requests_total++
+    - Start response timer
 
-  Note over P1:  
-    • Increments Counter `sentiment_requests_total{}`  
-    • Starts timer for Histogram `sentiment_response_time_seconds`  
+    AppPod->>ModelService: POST /infer {"tweet":"..."}
+    ModelService->>ModelPod: Route to replica
+    
+    Note right of ModelPod: Processing:
+    - sentiment_inference_total++
+    - Record latency histogram
 
-  P1->>S2: POST /infer {"tweet":"I love cats!"}
-  S2->>P2: Route to one of 2 “model-service” Pods
+    ModelPod-->>AppPod: {"sentiment":"positive"}
+    AppPod-->>User: Return JSON response
+    
+    Note left of AppPod: Metrics updated:
+    - sentiment_responses_total++
+    - Record response time
 
-  Note over P2:  
-    • Preprocess (lib-ml)  
-    • Increments Counter `sentiment_inference_total{}`  
-    • Records Histogram `sentiment_inference_latency_seconds`  
+    loop Every 15s
+        Prom->>AppPod: Scrape /metrics
+        Prom->>ModelPod: Scrape /metrics
+    end
 
-  P2-->>P1: Return JSON { "sentiment":"positive" }
-  P1-->>U: Return final JSON + render UI
-
-  Note over P1:  
-    • Stops timer → record `sentiment_response_time_seconds`  
-    • Increments Counter `sentiment_responses_total{sentiment="positive"}`  
-
-  loop Every 15s
-    PR-->P1: scrape `/metrics`
-    PR-->P2: scrape `/metrics`
-  end
-
-  PR->>GF: Update dashboards
-  alt rate(sentiment_requests_total[1m]) > 15 for 2m
-    PR->>AM: Fire “HighRequestRate”  
-    AM->>Dev: Send email alert 💌
-  end
+    Prom->>Graf: Update dashboards
+    
+    alt High traffic detected
+        Prom->>Alert: Trigger alert
+        Alert->>Team: Send notification
+    end
 ```
