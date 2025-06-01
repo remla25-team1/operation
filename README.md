@@ -20,7 +20,6 @@ Make sure you have installed:
 - **Kubectl**
 
 ## Clone the Repository
-
 Clone the **operation** repository from GitHub (e.g., using SSH):
 
    ```bash
@@ -28,35 +27,24 @@ Clone the **operation** repository from GitHub (e.g., using SSH):
    cd operation
    ```
 
-<!-- ### 2. Start the Services
-From the root of the **operation** repository, build and start all services using Docker Compose:
-
-   ```bash
-   docker compose up --build
-   # or, if using the older syntax:
-   docker-compose up --build
-   ```
-
-Once the containers are running, open your browser and go to [http://localhost:8080](http://localhost:8080) to access the application.
-
-
-### 3. Stop and Clean Up
-
-   ```bash
-   docker compose down
-   # or
-   docker-compose down
-   ``` -->
-
-## Running Kubernetes Cluster
-Navigate into ```operation``` dir and run:
+## Running Application on Kubernetes Cluster
+Navigate into ```operation``` dir and run the code below.
+Set up a ```imagePullSecrets``` for GHCR: first generate a new token (classic) on Github. Give it scopes ```read:packages, repo```. Copy the token and paste it in the command below:
 
 ```bash
 vagrant up
 
-# So that the cluster_network and ctrl_ip are not hardcoded
 ansible-playbook -u vagrant -i 192.168.56.100, playbooks/finalization.yaml --extra-vars "cluster_network=192.168.56 ctrl_ip=192.168.56.100"
+
+ansible-playbook -i shared/inventory.ini migrate.yaml \
+  --ask-become-pass \
+  -e github_username=<your-github-username> \
+  -e github_pat=<your-github-pat> \
+  -e github_email=<your-email>
+
 ```
+
+When running the ```migrate.yaml``` playbook, you will be asked for your ```BECOME``` password. This is so that the playbook can run commands in ```sudo``` mode. Simply fill in your host password here.
 
 To tear down the cluster run:
 ```bash
@@ -64,7 +52,6 @@ vagrant destroy
 
 docker network ls # here you can check if the network is still live and remove it 
 ```
-
 
 All VMs mount the same shared VirtualBox folder as /mnt/shared into the VM. You can check this yourself. Here is a little proof:
 ```bash
@@ -79,85 +66,6 @@ shared
 vagrant@k8s-ctrl:/mnt$ cd shared
 vagrant@k8s-ctrl:/mnt/shared$ ls
 admin.conf  ansible.cfg  inventory.ini
-```
-
-## Migrating application to Kubernetes
-Created the Kubernetes manifests in ```k8s``` directory. Installed kubectl on my host (```brew install kubectl``` on macOS). 
-
-Setting up a ```imagePullSecrets``` for GHCR: first generate a new token (classic) on Github. Give it scopes ```read:packages, repo```. Copy the token and paste it here:
-```bash
-kubectl create secret docker-registry ghcr-secret \
-  --docker-server=ghcr.io \
-  --docker-username=<your-github-username> \
-  --docker-password=<your-github-pat> \
-  --docker-email=<your-email>
-```
-Run this in controller node, it will print ```secret/ghcr-secret created```. Check in control node with:
-```bash
-kubectl get secrets
-```
-
-On host, run:
-```bash
-vagrant ssh ctrl -- sudo cat /etc/kubernetes/admin.conf > ~/kubeconfig-vagrant
-```
-This copies the kubeconfig from the controller to your home directory as ```kubeconfig-vagrant```.
-On your host, run:
-```bash
-export KUBECONFIG=~/kubeconfig-vagrant
-```
-You can add this line to your ~/.bashrc or ~/.zshrc for convenience. Now test the connection with
-```bash
-kubectl get nodes
-```
-This means that we have pointed our local ```kubectl``` towards the cluster, so we can make changes to it from the host (instead of inside the controller).
-
-If you have the cluster up and running, you should see all the nodes listed now, similar to this:
-```bash
-NAME         STATUS   ROLES           AGE    VERSION
-ctrl         Ready    control-plane   117m   v1.29.15
-k8s-node-1   Ready    <none>          116m   v1.29.15
-k8s-node-2   Ready    <none>          115m   v1.29.15
-```
-
-Now you can apply the Kubernetes manifest YAML files directly from the host. This means we copy the manifests from the host to the controller.
-```bash
-kubectl apply -f /Users/annavisman/stack/TUDelft/REMLA/operation/k8s/model-service.yaml
-kubectl apply -f /Users/annavisman/stack/TUDelft/REMLA/operation/k8s/app.yaml
-kubectl apply -f /Users/annavisman/stack/TUDelft/REMLA/operation/k8s/ingress.yaml
-kubectl apply -f /Users/annavisman/stack/TUDelft/REMLA/operation/k8s/application-config.yaml
-# deployment.apps/model-service created
-# service/model-service created
-
-scp -i .vagrant/machines/ctrl/virtualbox/private_key k8s/application-config.yaml vagrant@192.168.56.100:/home/vagrant/
-scp -i .vagrant/machines/ctrl/virtualbox/private_key k8s/model-service.yaml vagrant@192.168.56.100:/home/vagrant/
-scp -i .vagrant/machines/ctrl/virtualbox/private_key k8s/app.yaml vagrant@192.168.56.100:/home/vagrant/
-scp -i .vagrant/machines/ctrl/virtualbox/private_key k8s/ingress.yaml vagrant@192.168.56.100:/home/vagrant/
-```
-NOTE: Any changes you make to the local manifests on host, must be copied manually to the cluster for it to reflect the changes. So, after making changes, you need to run the above ```scp``` commands again, and apply them in the ```ctrl``` node (see ```kubectl apply``` below).
-
-Now (from the controller or host) we label the nodes:
-```bash
-kubectl label node k8s-node-1 node-role=model --overwrite
-kubectl label node k8s-node-2 node-role=app --overwrite
-```
-
-Check the node labels with:
-```bash
-kubectl get nodes --show-labels
-```
-
-We apply the manifests (inside the controller):
-```bash
-kubectl apply -f application-config.yaml
-kubectl apply -f model-service.yaml
-kubectl apply -f app.yaml
-kubectl apply -f ingress.yaml
-```
-
-Verify that the pods are running on node 1 and 2:
-```bash
-kubectl get pods -o wide
 ```
 
 With NGINX installed, we can see if the controller is deployed to the ```ingress-nginx``` namespace:
@@ -244,6 +152,7 @@ kubectl get configmaps
 # application-config   6      52m
 # kube-root-ca.crt     1      4h33m
 ```
+
 ## Other useful stuff
 Pushing new Docker image of a repo so that it can be deployed on the running cluster (```app``` example):
 ```bash
