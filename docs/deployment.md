@@ -2,39 +2,78 @@
 
 ## 📦 Helm Chart Overview
 
-The deployment consists of multiple components defined in the Helm Chart:
+Our Helm chart defines all application and monitoring resources under `helm_chart/templates/`. The structure:
 
 ```mermaid
 graph TD
-  A[operation/] --> B[templates/]
-  B --> B1[_helpers.tpl]
-  B --> B2[NOTES.txt]
-  B --> B3[app-deployment.yaml]
-  B --> B4[app-service.yaml]
-  B --> B5[configMap.yaml]
-  B --> B6[ingress.yaml]
-  B --> B7[model-deployment.yaml]
-  B --> B8[model-service.yaml]
-  B --> B9[secret.yaml]
-  B --> B10[servicemonitor.yaml]
+  A[operation/] --> B[helm_chart/]
+  B --> C[templates/]
+  C --> C1[_helpers.tpl]
+  C --> C2[NOTES.txt]
+  C --> C3[app-deployment.yaml]
+  C --> C4[app-service.yaml]
+  C --> C5[configMap.yaml]
+  C --> C6[ingress.yaml]
+  C --> C7[model-deployment.yaml]
+  C --> C8[model-service.yaml]
+  C --> C9[secret.yaml]
+  C --> C10[servicemonitor.yaml]
+  B --> D[values.yaml]
+  B --> E[Chart.yaml]
 ```
+- **app-deployment.yaml**: Defines Deployment for `app` (1 replica, NodePort).  
+- **app-service.yaml**: Exposes `app` via Service (port 8080).  
+- **model-deployment.yaml**: Defines Deployment for `model-service` (1 replica).  
+- **model-service.yaml**: Exposes `model-service` via Service (port 5000).  
+- **configMap.yaml**: Application configuration (environment variables).  
+- **secret.yaml**: Docker credentials (GHCR) and SMTP credentials for alerts.  
+- **ingress.yaml**: Routes `app.local` to Service `app`.  
+- **servicemonitor.yaml**: Instructs Prometheus to scrape metrics from `app` and `model-service`.  
 
+`values.yaml` holds configurable parameters (e.g., image tags, replica counts, ports).  
+`Chart.yaml` defines chart metadata.
 
 ## 🧩 Resources Overview
 
-| File                    | Resource Type   | Description                                |
-|-------------------------|-----------------|--------------------------------------------|
-| `app-deployment.yaml`   | Deployment      | Deploys the main application container     |
-| `app-service.yaml`      | Service         | Exposes the application to internal network|
-| `model-deployment.yaml` | Deployment      | Deploys ML model(s)                         |
-| `model-service.yaml`    | Service         | Exposes model to internal/external clients |
-| `configMap.yaml`        | ConfigMap       | Configuration for the application           |
-| `secret.yaml`           | Secret          | Manages sensitive credentials               |
-| `ingress.yaml`          | Ingress         | Exposes services via HTTP                    |
-| `servicemonitor.yaml`   | ServiceMonitor  | Prometheus monitoring configuration         |
+### Helm Chart (helm_chart/templates/)
+| File                   | Type           | Description                                                                                   |
+|------------------------|----------------|-----------------------------------------------------------------------------------------------|
+| `_helpers.tpl`          | Helper Template| Contains helper functions (e.g., naming conventions).                                        |
+| `NOTES.txt`            | Notes          | Outputs post-install reminders.                                                              |
+| `app-deployment.yaml`  | Deployment     | Deploys app containers (3 replicas, labeled `app=app`).                                      |
+| `app-service.yaml`     | Service        | Exposes app pods on port 8080 (NodePort).                                                    |
+| `model-deployment.yaml`| Deployment     | Deploys model-service containers (2 replicas, labeled `app=model-service`).                   |
+| `model-service.yaml`   | Service        | Exposes model-service on port 5000 (ClusterIP).                                              |
+| `configMap.yaml`       | ConfigMap      | Defines environment variables: `MODEL_SERVICE_HOST`, `MODEL_SERVICE_PORT`, feature flags.    |
+| `secret.yaml`          | Secret         | Holds `ghcr-secret` (docker registry) and `smtp-credentials` (alerts).                       |
+| `ingress.yaml`         | Ingress        | Routes external traffic for `app.local` → Service `app`.                                     |
+| `servicemonitor.yaml`  | ServiceMonitor | Prometheus scrape configuration for `app` and `model-service`.                               |
+
+### Raw Manifests (k8s/)
+| File                      | Type                        | Description                                                       |
+|---------------------------|-----------------------------|-------------------------------------------------------------------|
+| `application-config.yaml`  | ConfigMap                   | Mirrors `configMap.yaml` values for direct `kubectl apply`.       |
+| `app.yaml`                | Deployment + Service + Ingress | Simplified app Deployment, Service, and Ingress (legacy).         |
+| `model-service.yaml`      | Deployment + Service         | Simplified model-service Deployment and Service (legacy).         |
+| `ingress.yaml`            | Ingress                     | Legacy Ingress for app.                                           |
+
+### Monitoring (Installed via Helm)
+| Resource                      | Type           | Description                                                                                      |
+|-------------------------------|----------------|------------------------------------------------------------------------------------------------|
+| ServiceMonitor via Helm Chart  | ServiceMonitor | Auto-discovered metrics for `app` and `model-service`.                                          |
+| PrometheusRule via Helm values | PrometheusRule | Defines alert `HighRequestRate` if `rate(sentiment_requests_total[1m]) > 15` for 2 minutes.     |
+| AlertmanagerConfig via Helm values | AlertmanagerConfig | Routes alerts to SMTP receiver using `smtp-credentials`.                                       |
+
+### Other
+| File/Directory              | Type            | Description                                                                                     |
+|----------------------------|-----------------|------------------------------------------------------------------------------------------------|
+| `join_cluster.sh`           | Script          | Automates joining worker nodes to control plane.                                               |
+| `playbooks/*.yaml`          | Ansible Playbooks| Provision control-plane and worker nodes: disable swap, set sysctls, mount `/mnt/shared`, install Kubernetes. |
+| `templates/hosts.j2`        | Jinja2 Template | Generates `/etc/hosts` on each VM with node IPs/hostnames.                                     |
+| `Vagrantfile`               | Vagrant Config  | Spins up 3 VMs: ctrl, k8s-node-1, k8s-node-2.                                                 |
 
 
-## 🌐 Deployment Architecture
+## 🌐 Application General Overview
 
 ```mermaid
 graph LR
@@ -52,7 +91,7 @@ graph LR
     INGRESS[Ingress Controller]
   end
 
-  USER[User]
+  USER[User Browser]
 
   USER -->|HTTP Request| INGRESS
   INGRESS -->|Route to app Service| APPSVC
@@ -63,68 +102,104 @@ graph LR
   style MODEL fill:#f9d4a6,stroke:#333,stroke-width:2px
   style INGRESS fill:#bbdefb,stroke:#333,stroke-width:2px
 ```
-## 🔁 Request Handling Flow
 
-1. User sends a request to the application via the Ingress controller (`app.local`)  
-2. The Ingress (`192.168.56.90`) routes incoming requests to the `app-service`  
-3. The `app-service` pods (3 replicas) handle frontend and API gateway logic:  
-   - Increments counter `sentiment_requests_total`  
-   - Starts timer for histogram `sentiment_response_time_seconds`  
-   - Forwards requests to `model-service`  
-4. The `model-service` pods (2 replicas) perform ML inference:  
-   - Preprocess input using ML library  
-   - Increments counter `sentiment_inference_total`  
-   - Records histogram `sentiment_inference_latency_seconds`  
-   - Returns sentiment prediction JSON  
-5. The `app-service`:  
-   - Stops timer and records `sentiment_response_time_seconds`  
-   - Increments counter `sentiment_responses_total` (with sentiment label)  
-6. Returns final response to user  
+- **Ingress Controller**:  
+  Receives `app.local` traffic (LoadBalancer IP `192.168.56.90`) and forwards to the `app` Service.
+
+- **app Service**:  
+  Balances traffic among 3 `app` Pods running the frontend and API gateway.
+
+- **model-service Service**:  
+  Balances traffic among 2 `model-service` Pods performing ML inference.
 
 ---
 
-## 🧩 Visual Data Flow Diagram
+## 🔁 Request Handling Flow
+
+- User sends a request to http://app.local/predict?tweet="I love cats!".
+
+- Ingress Controller (192.168.56.90) routes based on host/path → Service “app”.
+
+- app pods (3 replicas) handle the request:
+
+    - Increment Counter sentiment_requests_total
+
+    - Start timer for Histogram sentiment_response_time_seconds
+
+    - Forward inference request to model-service.
+
+- model-service pods (2 replicas) process inference:
+
+    - Preprocess input (lib-ml)
+
+    - Increment Counter sentiment_inference_total
+
+    - Record Histogram sentiment_inference_latency_seconds
+
+    - Return { "sentiment": "positive" }
+
+- app pods record response metrics:
+
+    - Stop timer → record sentiment_response_time_seconds
+
+    - Increment Counter sentiment_responses_total{sentiment="positive"}
+
+- Response is returned to the user’s browser.
+
+---
+
+Every 15 seconds:
+
+- Prometheus scrapes /metrics from all app and model-service Pods (via ServiceMonitor).
+
+- Grafana dashboards update with latest metrics.
 
 ```mermaid
 sequenceDiagram
-    autonumber
-    actor User
-    participant Ingress
-    participant AppService
-    participant AppPod
-    participant ModelService
-    participant ModelPod
-    participant Prometheus
-    participant Grafana
-    participant Alertmanager
+  autonumber
+  actor User as Browser (app.local)
+  participant Ingress as Ingress (192.168.56.90)
+  participant S1 as Service “app”
+  participant P1 as Pod “app” (3 replicas)
+  participant S2 as Service “model-service”
+  participant P2 as Pod “model-service” (2 replicas)
+  participant PR as Prometheus
+  participant GF as Grafana
+  participant AM as Alertmanager
 
-    User->>Ingress: GET /predict?tweet="I love cats!"
-    Ingress->>AppService: Forward request
-    AppService->>AppPod: Route to replica
-    
-    Note right of AppPod: Record request metrics
-    
-    AppPod->>ModelService: POST /infer
-    ModelService->>ModelPod: Route to replica
-    
-    Note right of ModelPod: Process inference
-    
-    ModelPod-->>AppPod: Return sentiment
-    AppPod-->>User: Return JSON response
-    
-    Note left of AppPod: Record response metrics
+  User->>Ingress: GET /predict?tweet="I love cats!"
+  Ingress->>S1: Forward to Service “app”
+  S1->>P1: Route to one of 3 “app” Pods
 
-    loop Every 15s
-        Prometheus->>AppPod: Scrape metrics
-        Prometheus->>ModelPod: Scrape metrics
-    end
+  Note right of P1:  
+    • Increment `sentiment_requests_total`  
+    • Start timer `sentiment_response_time_seconds`  
 
-    Prometheus->>Grafana: Update dashboards
-    
-    alt High traffic detected
-        Prometheus->>Alertmanager: Trigger alert
-        Alertmanager->>Team: Send notification
-    end
+  P1->>S2: POST /infer {"tweet":"I love cats!"}
+  S2->>P2: Route to one of 2 “model-service” Pods
+
+  Note right of P2:  
+    • Preprocess (lib-ml)  
+    • Increment `sentiment_inference_total`  
+    • Record `sentiment_inference_latency_seconds`  
+
+  P2-->>P1: Return JSON { "sentiment":"positive" }
+  P1-->>User: Return final JSON + render UI
+
+  Note left of P1:  
+    • Stop timer → record `sentiment_response_time_seconds`  
+    • Increment `sentiment_responses_total{sentiment="positive"}`  
+
+  loop Every 15s
+    PR-->P1: scrape `/metrics`
+    PR-->P2: scrape `/metrics`
+  end
+
+  PR->>GF: Update dashboards
+  alt rate(sentiment_requests_total[1m]) > 15 for 2m
+    PR->>AM: Fire “HighRequestRate” alert  
+    AM->>Team: Send email notification 💌
+  end
 ```
 
 ---
