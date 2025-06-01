@@ -113,6 +113,23 @@ graph LR
   Routes traffic to the single `model-service` Pod performing ML inference.
 ---
 
+## 🛠️ Istio-Specific Visualization​
+
+```mermaid
+graph TD
+  classDef istio fill:#4f8bff,stroke:#333
+  classDef k8s fill:#42b983,stroke:#333
+  
+  A[User] --> B(Istio IngressGateway)
+  B --> C{{VirtualService}}
+  C -->|90%| D[App v1]
+  C -->|10%| E[App v2]
+  D --> F[Model v1]
+  E --> G[Model v2]
+  class B,C istio;
+  class D,E,F,G k8s;
+```
+
 ## 🔁 Request Handling Flow
 
 - User sends a request to `http://app.local/predict?tweet="I love cats!"`.
