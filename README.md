@@ -20,6 +20,7 @@ Make sure you have installed:
 - **Kubectl**
 
 ## Clone the Repository
+
 Clone the **operation** repository from GitHub (e.g., using SSH):
 
    ```bash
@@ -52,6 +53,7 @@ vagrant destroy
 
 docker network ls # here you can check if the network is still live and remove it 
 ```
+
 
 All VMs mount the same shared VirtualBox folder as /mnt/shared into the VM. You can check this yourself. Here is a little proof:
 ```bash
@@ -236,7 +238,22 @@ kubectl apply -f dashboard/tweet-sentiment-dashboard-configmap.yaml
 - Select Prometheus as data source, click Import
 
 
+## Testing Istio
+The cluster is configured with Istio in the ```migrate.yaml``` playbook which you ran above. To test the Istio traffic management functionality, you can try the following two tests:
+```bash
+# find the INGRES-IP (external ip below)
+kubectl -n istio-system get svc istio-ingressgateway
+# NAME                   TYPE           CLUSTER-IP     EXTERNAL-IP     PORT(S)                                                                      AGE
+# istio-ingressgateway   LoadBalancer   10.98.33.145   192.168.56.91   15021:32752/TCP,80:31897/TCP,443:31145/TCP,31400:30170/TCP,15443:31601/TCP   18m
 
+# testing sticky sessions
+for i in {1..10}; do
+  curl -s http://<INGRESS_IP>/
+  echo
+done
+
+curl -H "user-group: canary" http://<INGRESS_IP>/
+```
 
 ## Use-Case: Tweet Sentiment Analysis
 

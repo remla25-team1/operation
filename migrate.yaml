@@ -1,4 +1,4 @@
-- name: Deploy application manifests & label nodes
+- name: Deploy application manifests, label nodes, enable Istio Traffic Management
   hosts: ctrl
   vars:
     manifests:
@@ -6,6 +6,11 @@
       - app.yaml
       - ingress.yaml
       - application-config.yaml
+      - app-v1.yaml
+      - app-v2.yaml
+      - istio/gateway.yaml
+      - istio/destinationrules.yaml
+      - istio/virtualservices.yaml
   tasks:
     - name: Copy kubeconfig from controller to vagrant home directory
       ansible.builtin.shell: sudo cat /etc/kubernetes/admin.conf > /home/vagrant/.kube/config
@@ -30,6 +35,19 @@
         KUBECONFIG: /home/vagrant/.kube/config
       register: secret_out
       failed_when: secret_out.rc not in [0,1]
+
+    - name: Label default namespace for Istio injection
+      shell: kubectl label namespace default istio-injection=enabled --overwrite
+      environment:
+        KUBECONFIG: /home/vagrant/.kube/config
+
+    - name: Ensure /home/vagrant/istio directory exists on controller
+      file:
+        path: /home/vagrant/istio
+        state: directory
+        owner: vagrant
+        group: vagrant
+        mode: '0755'
 
     - name: Copy Kubernetes manifests to controller
       ansible.builtin.copy:
@@ -63,6 +81,26 @@
       become: yes
       become_user: vagrant
 
+    - name: Ensure KUBECONFIG export is in local shell config
+      delegate_to: localhost
+      run_once: true
+      vars:
+        home: "{{ lookup('env','HOME') }}"
+        rc_file: >-
+          {% if lookup('env','SHELL') is search('bash$') %}
+            {{ home }}/.bashrc
+          {% elif lookup('env','SHELL') is search('zsh$') %}
+            {{ home }}/.zshrc
+          {% else %}
+            {{ home }}/.profile
+          {% endif %}
+      ansible.builtin.lineinfile:
+        path: "{{ rc_file }}"
+        create: yes
+        regexp: '^export KUBECONFIG=.*kubeconfig-vagrant'
+        line: 'export KUBECONFIG={{ playbook_dir }}/kubeconfig-vagrant'
+        insertafter: EOF
+
     - name: Wait for pods to be ready
       environment:
         KUBECONFIG: /home/vagrant/.kube/config
@@ -87,3 +125,23 @@
     - name: Print pod distribution
       ansible.builtin.debug:
         var: pods_out.stdout_lines
+
+    - name: Get Gateway details
+      shell: kubectl get gateway app-gateway
+      environment:
+        KUBECONFIG: /home/vagrant/.kube/config
+
+    - name: Get DestinationRules details
+      shell: kubectl get destinationrule -o wide
+      environment:
+        KUBECONFIG: /home/vagrant/.kube/config
+
+    - name: Get VirtualServices details
+      shell: kubectl get virtualservice -o wide
+      environment:
+        KUBECONFIG: /home/vagrant/.kube/config
+
+    - name: Get pods with labels
+      shell: kubectl get pods --show-labels
+      environment:
+        KUBECONFIG: /home/vagrant/.kube/config
