@@ -40,9 +40,9 @@ graph TD
 |------------------------|----------------|-----------------------------------------------------------------------------------------------|
 | `_helpers.tpl`          | Helper Template| Contains helper functions (e.g., naming conventions).                                        |
 | `NOTES.txt`            | Notes          | Outputs post-install reminders.                                                              |
-| `app-deployment.yaml`  | Deployment     | Deploys app containers (3 replicas, labeled `app=app`).                                      |
+| `app-deployment.yaml`  | Deployment     | Deploys app containers (1 replica, labeled `{ .Release.Name }}-app`).                                      |
 | `app-service.yaml`     | Service        | Exposes app pods on port 8080 (NodePort).                                                    |
-| `model-deployment.yaml`| Deployment     | Deploys model-service containers (2 replicas, labeled `app=model-service`).                   |
+| `model-deployment.yaml`| Deployment     | Deploys model-service containers (1 replica, labeled `{ .Release.Name }}-app`).                   |
 | `model-service.yaml`   | Service        | Exposes model-service on port 5000 (ClusterIP).                                              |
 | `configMap.yaml`       | ConfigMap      | Defines environment variables: `MODEL_SERVICE_HOST`, `MODEL_SERVICE_PORT`, feature flags.    |
 | `secret.yaml`          | Secret         | Holds `ghcr-secret` (docker registry) and `smtp-credentials` (alerts).                       |
@@ -120,7 +120,7 @@ graph LR
 
 - Ingress Controller (192.168.56.90) routes based on host/path → Service “app”.
 
-- app pods (3 replicas) handle the request:
+- app pods (1 replica) handle the request:
 
     - Increment Counter sentiment_requests_total
 
@@ -128,7 +128,7 @@ graph LR
 
     - Forward inference request to model-service.
 
-- model-service pods (2 replicas) process inference:
+- model-service pods (1 replica) process inference:
 
     - Preprocess input (lib-ml)
 
@@ -156,50 +156,44 @@ Every 15 seconds:
 
 ```mermaid
 sequenceDiagram
-  autonumber
-  actor User as Browser (app.local)
-  participant Ingress as Ingress (192.168.56.90)
-  participant S1 as Service “app”
-  participant P1 as Pod “app” (3 replicas)
-  participant S2 as Service “model-service”
-  participant P2 as Pod “model-service” (2 replicas)
-  participant PR as Prometheus
-  participant GF as Grafana
-  participant AM as Alertmanager
+    autonumber
+    actor User
+    participant Ingress
+    participant AppService
+    participant AppPod
+    participant ModelService
+    participant ModelPod
+    participant Prometheus
+    participant Grafana
+    participant Alertmanager
 
-  User->>Ingress: GET /predict?tweet="I love cats!"
-  Ingress->>S1: Forward to Service “app”
-  S1->>P1: Route to one of 3 “app” Pods
+    User->>Ingress: GET /predict?tweet="I love cats!"
+    Ingress->>AppService: Forward request
+    AppService->>AppPod: Route to replica
+    
+    Note right of AppPod: Record request metrics
+    
+    AppPod->>ModelService: POST /infer
+    ModelService->>ModelPod: Route to replica
+    
+    Note right of ModelPod: Process inference
+    
+    ModelPod-->>AppPod: Return sentiment
+    AppPod-->>User: Return JSON response
+    
+    Note left of AppPod: Record response metrics
 
-  Note right of P1:  
-    • Increment `sentiment_requests_total`  
-    • Start timer `sentiment_response_time_seconds`  
+    loop Every 15s
+        Prometheus->>AppPod: Scrape metrics
+        Prometheus->>ModelPod: Scrape metrics
+    end
 
-  P1->>S2: POST /infer {"tweet":"I love cats!"}
-  S2->>P2: Route to one of 2 “model-service” Pods
-
-  Note right of P2:  
-    • Preprocess (lib-ml)  
-    • Increment `sentiment_inference_total`  
-    • Record `sentiment_inference_latency_seconds`  
-
-  P2-->>P1: Return JSON { "sentiment":"positive" }
-  P1-->>User: Return final JSON + render UI
-
-  Note left of P1:  
-    • Stop timer → record `sentiment_response_time_seconds`  
-    • Increment `sentiment_responses_total{sentiment="positive"}`  
-
-  loop Every 15s
-    PR-->P1: scrape `/metrics`
-    PR-->P2: scrape `/metrics`
-  end
-
-  PR->>GF: Update dashboards
-  alt rate(sentiment_requests_total[1m]) > 15 for 2m
-    PR->>AM: Fire “HighRequestRate” alert  
-    AM->>Team: Send email notification 💌
-  end
+    Prometheus->>Grafana: Update dashboards
+    
+    alt High traffic detected
+        Prometheus->>Alertmanager: Trigger alert
+        Alertmanager->>Team: Send notification
+    end
 ```
 
 ---
@@ -220,7 +214,6 @@ sequenceDiagram
 
 ## 🔧 Notes on Cluster Resources
 
-- Each Deployment runs multiple replicas (default: 3) to ensure availability.  
 - Services expose pods inside the cluster and allow load balancing.  
 - Ingress exposes services externally with domain-based routing.  
 - ConfigMaps and Secrets manage configuration and sensitive data.  
