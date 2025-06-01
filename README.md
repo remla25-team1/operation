@@ -43,8 +43,8 @@ ansible-playbook -i shared/inventory.ini migrate.yaml \
 ```
 
 When running the ```migrate.yaml``` playbook, you will be asked for your ```BECOME``` password. This is so that the playbook can run commands in ```sudo``` mode. Simply fill in your host password here.
-
-# So that the cluster_network and ctrl_ip are not hardcoded
+So that the cluster_network and ctrl_ip are not hardcoded
+```
 ansible-playbook -u vagrant -i 192.168.56.100, playbooks/finalization.yaml --extra-vars "cluster_network=192.168.56 ctrl_ip=192.168.56.100"
 ```
 
