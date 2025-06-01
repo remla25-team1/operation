@@ -115,33 +115,24 @@ graph LR
 
 ## 🔁 Request Handling Flow
 
-- User sends a request to http://app.local/predict?tweet="I love cats!".
+- User sends a request to `http://app.local/predict?tweet="I love cats!"`.
 
-- Ingress Controller (192.168.56.90) routes based on host/path → Service “app”.
+- Ingress Controller (`192.168.56.90`) routes based on host/path → Service **app**.
 
-- app pods (1 replica) handle the request:
+- **app** pods (1 replica) handle the request:
+  - Increment counter `sentiment_requests_total`
+  - Start timer for histogram `sentiment_response_time_seconds`
+  - Forward inference request to **model-service**
 
-    - Increment Counter sentiment_requests_total
+- **model-service** pods (1 replica) process inference:
+  - Preprocess input (using `lib-ml`)
+  - Increment counter `sentiment_inference_total`
+  - Record histogram `sentiment_inference_latency_seconds`
+  - Return `{ "sentiment": "positive" }`
 
-    - Start timer for Histogram sentiment_response_time_seconds
-
-    - Forward inference request to model-service.
-
-- model-service pods (1 replica) process inference:
-
-    - Preprocess input (lib-ml)
-
-    - Increment Counter sentiment_inference_total
-
-    - Record Histogram sentiment_inference_latency_seconds
-
-    - Return { "sentiment": "positive" }
-
-- app pods record response metrics:
-
-    - Stop timer → record sentiment_response_time_seconds
-
-    - Increment Counter sentiment_responses_total{sentiment="positive"}
+- **app** pods record response metrics:
+  - Stop timer → record `sentiment_response_time_seconds`
+  - Increment counter `sentiment_responses_total{sentiment="positive"}`
 
 - Response is returned to the user’s browser.
 
@@ -149,9 +140,9 @@ graph LR
 
 Every 15 seconds:
 
-- Prometheus scrapes /metrics from all app and model-service Pods (via ServiceMonitor).
+- Prometheus scrapes `/metrics` from all **app** and **model-service** pods (via ServiceMonitor).
 
-- Grafana dashboards update with latest metrics.
+- Grafana dashboards update with the latest metrics.
 
 ```mermaid
 sequenceDiagram
