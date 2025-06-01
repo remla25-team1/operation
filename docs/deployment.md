@@ -1,202 +1,107 @@
-# Deployment Documentation 📦
+# 📄 Deployment Documentation
 
-## 1. System Overview 🚀
+## 📦 Helm Chart Overview
 
-This document describes our final Kubernetes deployment of the tweet sentiment analysis system (A3). It covers:
-
-- **Cluster Topology**: Vagrant‐provisioned VMs and node roles  
-- **Deployed Resources**: All Kubernetes objects and how they relate  
-- **Data Flow**: Request routing, metrics collection, and alerting  
-- **Visualizations**: Mermaid diagrams embedded for clarity  
-
-After reading, a new team member should understand how to bring up, inspect, and extend the system.
-
----
-
-### 1.1 Cluster Topology 🖥️
-
-- **ctrl (192.168.56.100)**  
-  - Kubernetes control‐plane (API server, scheduler, controller‐manager)  
-  - Hosts the NGINX Ingress Controller Pod (namespace `ingress-nginx`)  
-- **k8s-node-1 (192.168.56.101)**  *(labeled `node-role=model`)*  
-  - Schedules all `model-service` Pods  
-- **k8s-node-2 (192.168.56.102)**  *(labeled `node-role=app`)*  
-  - Schedules all `app` Pods  
-- **Shared Folder**: All VMs mount `/mnt/shared` via VirtualBox  
-
-Networking:  
-- Host‐only network 192.168.56.0/24  
-- `/etc/hosts` on the host maps `app.local` → `192.168.56.90` (Ingress LoadBalancer)
-
----
-
-## 2. Deployed Resources 🏗️
-
-Below is a concise inventory of every Kubernetes object, grouped by category. No YAML details—just concepts and relations.
-
-### 2.1 Namespaces
-
-- `default`:  
-  - Hosts `app`, `model-service`, ConfigMaps, Secrets, Ingress  
-- `ingress-nginx`:  
-  - NGINX Ingress Controller Deployment & Service  
-- `monitoring`:  
-  - Prometheus, Grafana, Alertmanager, ServiceMonitors, Rules
-
----
-
-### 2.2 Deployments & Pods
-
-- **app (Deployment)**  
-  - **Replicas**: 3 ✔️  
-  - **NodeSelector**: `node-role=app`  
-  - **Function**: Serves UI & forwards inference requests to `model-service`  
-  - **Metrics**: Exposes `/metrics` on port 8080
-
-- **model-service (Deployment)**  
-  - **Replicas**: 2 ✔️  
-  - **NodeSelector**: `node-role=model`  
-  - **Function**: Preprocesses (via `lib-ml`), runs sentiment model, returns JSON  
-  - **Metrics**: Exposes `/metrics` on port 5000
-
-- **ingress-nginx-controller (Deployment)**  
-  - **Namespace**: `ingress-nginx`  
-  - **Function**: Receives external HTTP(S) traffic, forwards to `app` Service
-
-- **prometheus (Deployment)**  
-  - **Namespace**: `monitoring`  
-  - **Function**: Scrapes metrics from application Pods & cluster components  
-
-- **grafana (Deployment)**  
-  - **Namespace**: `monitoring`  
-  - **Function**: Visualizes metrics with custom dashboards  
-
-- **alertmanager (Deployment)**  
-  - **Namespace**: `monitoring`  
-  - **Function**: Sends email alerts when Prometheus rules trigger  
-
----
-
-### 2.3 Services 🌐
-
-- **Service `app`**  
-  - **Type**: NodePort (external access on each node)  
-  - **Port**: 8080 → NodePort 32045  
-  - **Selector**: `app=app` → balances among 3 `app` Pods  
-
-- **Service `model-service`**  
-  - **Type**: ClusterIP (internal)  
-  - **Port**: 5000  
-  - **Selector**: `app=model-service` → routes to 2 `model-service` Pods  
-
-- **Service `ingress-nginx-controller`**  
-  - **Namespace**: `ingress-nginx`  
-  - **Type**: LoadBalancer → External IP 192.168.56.90  
-  - **Ports**: 80, 443 → routes to Ingress Pods  
-
-- **Service `prometheus`**  
-  - **Namespace**: `monitoring`  
-  - **Type**: ClusterIP 9090 → Prometheus UI/API  
-
-- **Service `grafana`**  
-  - **Namespace**: `monitoring`  
-  - **Type**: ClusterIP 80 → Grafana UI (forward via `kubectl port-forward`)  
-
----
-
-### 2.4 Ingress & Routing 🛣️
-
-- **Ingress resource `app-ingress`** (namespace `default`)  
-  - **Host**: `app.local`  
-  - **Path `/`** → forwards to Service `app` (port 8080)  
-  - **Annotation**: `nginx.ingress.kubernetes.io/rewrite-target: /`  
-
-- **DNS / Hosts**:  
-  - On host machine, add  
-    ```
-    192.168.56.90   app.local
-    ```
-
----
-
-### 2.5 ConfigMaps & Secrets 🔑
-
-- **ConfigMap `application-config`** (namespace `default`)  
-  - Provides environment variables to `app` Pods:  
-    - `MODEL_SERVICE_HOST="model-service"`  
-    - `MODEL_SERVICE_PORT="5000"`  
-    - Any feature flags (e.g., `ENABLE_FEEDBACK="true"`)
-
-- **Secret `ghcr-secret`** (namespace `default`)  
-  - Docker registry credentials to pull images from `ghcr.io/remla25-team1`  
-
-- **Secret `smtp-credentials`** (namespace `monitoring`)  
-  - Contains base64-encoded SMTP username/password for Alertmanager email alerts  
-
----
-
-### 2.6 Monitoring CRDs 📈
-
-- **ServiceMonitor `app-servicemonitor`**  
-  - **Selector**: `app=app`  
-  - **Endpoint**: `/metrics` (port 8080), interval 15s  
-
-- **ServiceMonitor `model-servicemonitor`**  
-  - **Selector**: `app=model-service`  
-  - **Endpoint**: `/metrics` (port 5000), interval 15s  
-
-- **PrometheusRule `prometheusrule-app`**  
-  - **Alert**: `HighRequestRate` → when `rate(sentiment_requests_total[1m]) > 15` for 2m  
-  - Sends severity `warning`
-
-- **AlertmanagerConfig `alertmanagerconfig-smtp`**  
-  - **Route**: all alerts → `smtp-receiver`  
-  - **Receiver**: `smtp-receiver` sends email using `smtp-credentials` to `dev-team@example.com`  
-
----
-
-## 3. Data Flow & Dynamic Routing 🔄
-
-Below is a sequence diagram illustrating how a tweet inference request moves through the system:
+The deployment consists of multiple components defined in the Helm Chart:
 
 ```mermaid
-sequenceDiagram
-    autonumber
-    actor User
-    participant Ingress
-    participant AppService
-    participant AppPod
-    participant ModelService
-    participant ModelPod
-    participant Prometheus
-    participant Grafana
-    participant Alertmanager
-
-    User->>Ingress: GET /predict?tweet="I love cats!"
-    Ingress->>AppService: Forward request
-    AppService->>AppPod: Route to replica
-    
-    Note right of AppPod: Metrics recorded:\n1. sentiment_requests_total++\n2. Start response timer
-
-    AppPod->>ModelService: POST /infer {"tweet":"..."}
-    ModelService->>ModelPod: Route to replica
-    
-    Note right of ModelPod: Processing steps:\n1. sentiment_inference_total++\n2. Record latency
-
-    ModelPod-->>AppPod: {"sentiment":"positive"}
-    AppPod-->>User: Return JSON response
-    
-    Note left of AppPod: Metrics updated:\n1. sentiment_responses_total++\n2. Record response time
-
-    loop Every 15s
-        Prometheus->>AppPod: Scrape /metrics
-        Prometheus->>ModelPod: Scrape /metrics
-    end
-
-    Prometheus->>Grafana: Update dashboards
-    
-    alt High traffic detected
-        Prometheus->>Alertmanager: Trigger alert
-        Alertmanager->>Team: Send notification
-    end
+graph TD
+  A[operation/] --> B[templates/]
+  B --> B1[_helpers.tpl]
+  B --> B2[NOTES.txt]
+  B --> B3[app-deployment.yaml]
+  B --> B4[app-service.yaml]
+  B --> B5[configMap.yaml]
+  B --> B6[ingress.yaml]
+  B --> B7[model-deployment.yaml]
+  B --> B8[model-service.yaml]
+  B --> B9[secret.yaml]
+  B --> B10[servicemonitor.yaml]
 ```
+
+
+## 🧩 Resources Overview
+
+| File                    | Resource Type   | Description                                |
+|-------------------------|-----------------|--------------------------------------------|
+| `app-deployment.yaml`   | Deployment      | Deploys the main application container     |
+| `app-service.yaml`      | Service         | Exposes the application to internal network|
+| `model-deployment.yaml` | Deployment      | Deploys ML model(s)                         |
+| `model-service.yaml`    | Service         | Exposes model to internal/external clients |
+| `configMap.yaml`        | ConfigMap       | Configuration for the application           |
+| `secret.yaml`           | Secret          | Manages sensitive credentials               |
+| `ingress.yaml`          | Ingress         | Exposes services via HTTP                    |
+| `servicemonitor.yaml`   | ServiceMonitor  | Prometheus monitoring configuration         |
+
+
+## 🌐 Deployment Architecture & Data Flow
+
+```mermaid
+graph LR
+  subgraph Frontend
+    APP[app Deployment]
+    APPSVC[app Service]
+  end
+
+  subgraph Backend
+    MODEL[model-service Deployment]
+    MODELSVC[model-service Service]
+  end
+
+  subgraph Ingress
+    INGRESS[Ingress Controller]
+  end
+
+  USER[User]
+
+  USER -->|HTTP Request| INGRESS
+  INGRESS -->|Route to app Service| APPSVC
+  APPSVC -->|API Calls| MODELSVC
+  MODELSVC --> MODEL
+
+  style APP fill:#9fdfbf,stroke:#333,stroke-width:2px
+  style MODEL fill:#f9d4a6,stroke:#333,stroke-width:2px
+  style INGRESS fill:#bbdefb,stroke:#333,stroke-width:2px
+```
+
+## 🔁 Request Handling Flow
+
+1. User sends a request to the application via the Ingress controller.  
+2. The Ingress routes incoming requests based on host/path rules to the `app-service`.  
+3. The `app-service` pods handle frontend and API gateway logic, including serving pages and forwarding model inference requests.  
+4. For sentiment analysis, the `app-service` forwards requests to the `model-service`.  
+5. The `model-service` pods run the ML inference logic and return predictions.  
+6. The `app-service` sends the prediction back to the user.
+
+---
+
+## 🧭 Dynamic Routing and Canary Releases
+
+- We deploy two versions each of the frontend and backend:  
+  - Frontend: `app-service-v1`, `app-service-v2`  
+  - Backend: `model-service-v1`, `model-service-v2`  
+- The VirtualService (or Ingress rules) direct traffic dynamically with weights, for example:  
+  - 90% traffic to `app-service-v1`, 10% to `app-service-v2` (frontend)  
+  - Similarly for backend services.  
+- This routing enables canary releases and continuous experimentation by gradually shifting traffic.
+
+---
+
+## 🔧 Notes on Cluster Resources
+
+- Each Deployment runs multiple replicas (default: 3) to ensure availability.  
+- Services expose pods inside the cluster and allow load balancing.  
+- Ingress exposes services externally with domain-based routing.  
+- ConfigMaps and Secrets manage configuration and sensitive data.  
+- ServiceMonitor integrates with Prometheus for monitoring metrics.
+
+---
+
+## 🎯 Summary
+
+This deployment setup provides a robust, scalable, and flexible infrastructure:  
+
+- Clear separation between frontend and backend services.  
+- Support for versioning and canary deployment strategies.  
+- Integration with Kubernetes-native resources for easy management.  
+- Monitoring ready via Prometheus and Grafana dashboards.
