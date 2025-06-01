@@ -162,47 +162,41 @@ Below is a sequence diagram illustrating how a tweet inference request moves thr
 ```mermaid
 sequenceDiagram
     autonumber
-    actor User as Browser
-    participant Ingress as Ingress(192.168.56.90)
-    participant AppService as Service "app"
-    participant AppPod as Pod "app"
-    participant ModelService as Service "model-service"
-    participant ModelPod as Pod "model-service"
-    participant Prom as Prometheus
-    participant Graf as Grafana
-    participant Alert as Alertmanager
+    actor User
+    participant Ingress
+    participant AppService
+    participant AppPod
+    participant ModelService
+    participant ModelPod
+    participant Prometheus
+    participant Grafana
+    participant Alertmanager
 
     User->>Ingress: GET /predict?tweet="I love cats!"
     Ingress->>AppService: Forward request
     AppService->>AppPod: Route to replica
     
-    Note right of AppPod: Metrics recorded:
-    - sentiment_requests_total++
-    - Start response timer
+    Note right of AppPod: Metrics recorded:\n1. sentiment_requests_total++\n2. Start response timer
 
     AppPod->>ModelService: POST /infer {"tweet":"..."}
     ModelService->>ModelPod: Route to replica
     
-    Note right of ModelPod: Processing:
-    - sentiment_inference_total++
-    - Record latency histogram
+    Note right of ModelPod: Processing steps:\n1. sentiment_inference_total++\n2. Record latency
 
     ModelPod-->>AppPod: {"sentiment":"positive"}
     AppPod-->>User: Return JSON response
     
-    Note left of AppPod: Metrics updated:
-    - sentiment_responses_total++
-    - Record response time
+    Note left of AppPod: Metrics updated:\n1. sentiment_responses_total++\n2. Record response time
 
     loop Every 15s
-        Prom->>AppPod: Scrape /metrics
-        Prom->>ModelPod: Scrape /metrics
+        Prometheus->>AppPod: Scrape /metrics
+        Prometheus->>ModelPod: Scrape /metrics
     end
 
-    Prom->>Graf: Update dashboards
+    Prometheus->>Grafana: Update dashboards
     
     alt High traffic detected
-        Prom->>Alert: Trigger alert
-        Alert->>Team: Send notification
+        Prometheus->>Alertmanager: Trigger alert
+        Alertmanager->>Team: Send notification
     end
 ```
