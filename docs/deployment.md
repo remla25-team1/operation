@@ -107,11 +107,10 @@ graph LR
   Receives `app.local` traffic (LoadBalancer IP `192.168.56.90`) and forwards to the `app` Service.
 
 - **app Service**:  
-  Balances traffic among 3 `app` Pods running the frontend and API gateway.
+  Routes traffic to the single `app` Pod running the frontend and API gateway.
 
 - **model-service Service**:  
-  Balances traffic among 2 `model-service` Pods performing ML inference.
-
+  Routes traffic to the single `model-service` Pod performing ML inference.
 ---
 
 ## 🔁 Request Handling Flow
