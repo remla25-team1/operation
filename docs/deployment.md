@@ -87,50 +87,44 @@ graph LR
 
 ```mermaid
 sequenceDiagram
-  autonumber
-  actor U as Browser (app.local)
-  participant I as Ingress (192.168.56.90)
-  participant S1 as Service “app”
-  participant P1 as Pod “app” (3 replicas)
-  participant S2 as Service “model-service”
-  participant P2 as Pod “model-service” (2 replicas)
-  participant PR as Prometheus
-  participant GF as Grafana
-  participant AM as Alertmanager
+    autonumber
+    actor User
+    participant Ingress
+    participant AppService
+    participant AppPod
+    participant ModelService
+    participant ModelPod
+    participant Prometheus
+    participant Grafana
+    participant Alertmanager
 
-  U->>I: GET /predict?tweet="I love cats!"
-  I->>S1: Forward to Service “app”
-  S1->>P1: Route to one of 3 “app” Pods
+    User->>Ingress: GET /predict?tweet="I love cats!"
+    Ingress->>AppService: Forward request
+    AppService->>AppPod: Route to replica
+    
+    Note right of AppPod: Record request metrics
+    
+    AppPod->>ModelService: POST /infer
+    ModelService->>ModelPod: Route to replica
+    
+    Note right of ModelPod: Process inference
+    
+    ModelPod-->>AppPod: Return sentiment
+    AppPod-->>User: Return JSON response
+    
+    Note left of AppPod: Record response metrics
 
-  Note over P1:  
-    • Increments Counter `sentiment_requests_total{}`  
-    • Starts timer for Histogram `sentiment_response_time_seconds`  
+    loop Every 15s
+        Prometheus->>AppPod: Scrape metrics
+        Prometheus->>ModelPod: Scrape metrics
+    end
 
-  P1->>S2: POST /infer {"tweet":"I love cats!"}
-  S2->>P2: Route to one of 2 “model-service” Pods
-
-  Note over P2:  
-    • Preprocess (lib-ml)  
-    • Increments Counter `sentiment_inference_total{}`  
-    • Records Histogram `sentiment_inference_latency_seconds`  
-
-  P2-->>P1: Return JSON { "sentiment":"positive" }
-  P1-->>U: Return final JSON + render UI
-
-  Note over P1:  
-    • Stops timer → record `sentiment_response_time_seconds`  
-    • Increments Counter `sentiment_responses_total{sentiment="positive"}`  
-
-  loop Every 15s
-    PR-->P1: scrape `/metrics`
-    PR-->P2: scrape `/metrics`
-  end
-
-  PR->>GF: Update dashboards
-  alt rate(sentiment_requests_total[1m]) > 15 for 2m
-    PR->>AM: Fire “HighRequestRate”  
-    AM->>Dev: Send email alert 💌
-  end
+    Prometheus->>Grafana: Update dashboards
+    
+    alt High traffic detected
+        Prometheus->>Alertmanager: Trigger alert
+        Alertmanager->>Team: Send notification
+    end
 ```
 
 ---
