@@ -38,9 +38,10 @@ ansible-playbook -u vagrant -i 192.168.56.100, playbooks/finalization.yaml --ext
 
 ansible-playbook -i shared/inventory.ini migrate.yaml \
   --ask-become-pass \
-  -e github_username=<your-github-username> \ \
-  -e github_pat=<your-github-pat> \ \
+  -e github_username=<your-github-username> \
+  -e github_pat=<your-github-pat> \
   -e github_email=<your-email>
+
 ```
 
 When running the ```migrate.yaml``` playbook, you will be asked for your ```BECOME``` password. This is so that the playbook can run commands in ```sudo``` mode. Simply fill in your host password here.
