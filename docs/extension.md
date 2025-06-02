@@ -36,7 +36,9 @@ We propose extending the release pipeline with a **trigger-based mechanism** tha
 
 ### Visual Overview
 
-...
+![image info](visualization/extension.png)
+
+The visualization illustrates the proposed data-triggered retraining pipeline for our sentiment analysis model. Production data is continuously monitored using Prometheus to detect drift using statistical measures like PSI or KL divergence. If drift is detected, a GitHub workflow triggers retraining via DVC. The updated model is then redeployed through the CI/CD pipeline, closing the feedback loop.
 
 ### Experimental Evaluation
 
@@ -49,10 +51,6 @@ To evaluate the effectiveness of this extension, we propose the following setup:
         - The latency between when model drift actually begins (i.e., when the input data or user behavior changes) and when the system detects it and starts retraining.
         - How much the model's predictive performance worsened before the retraining kicked in
         - How often the pipeline retrains the model, and how much compute/storage it uses.
-
-### Generalizability
-
-This extension is broadly applicable to any ML system deployed in a dynamic environment. By coupling retraining and deployment with real-time data monitoring, and using tools like DVC for reproducibility, it establishes a feedback loop that improves adaptability and efficiency. It promotes a self-correcting, production-aware release pipeline — essential for maintaining performance and trust in evolving applications.
 
 ### Sources
 
