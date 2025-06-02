@@ -129,6 +129,7 @@ https://github.com/remla25-team1/operation (related to A3)
 https://github.com/remla25-team1/operation/pull/14 (related to A5)
 
 Approved PR: https://github.com/remla25-team1/model-training/pull/10
+https://github.com/remla25-team1/model-training/pull/11
 
 ### -- Sofia: --
 Created PR: https://github.com/remla25-team1/operation/pull/16 (related to A5)
