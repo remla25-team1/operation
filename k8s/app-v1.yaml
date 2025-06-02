@@ -22,7 +22,7 @@ spec:
         kubernetes.io/hostname: k8s-node-2
       containers:
       - name: app
-        image: ghcr.io/remla25-team1/app:latest  # specify versioned image tag here
+        image: ghcr.io/remla25-team1/app:0.0.6-pre-20250528-002  # specify versioned image tag here
         ports:
         - containerPort: 8080
         envFrom:

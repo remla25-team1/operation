@@ -1,4 +1,4 @@
-# app-v1.yaml
+# app-v2.yaml
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -22,12 +22,21 @@ spec:
         kubernetes.io/hostname: k8s-node-2
       containers:
       - name: app
-        image: ghcr.io/remla25-team1/app:latest  # specify versioned image tag here
+        image: ghcr.io/remla25-team1/app:0.0.6-pre-20250602-001  # specify versioned image tag here
         ports:
         - containerPort: 8080
         envFrom:
         - configMapRef:
             name: application-config
+        env:
+            - name: REDIS_HOST
+              value: "redis"
+            - name: REDIS_PORT
+              value: "6379"
+            - name: REDIS_DB
+              value: "0"
+            - name: CACHE_TTL
+              value: "3600"    
         volumeMounts:
         - name: app-data
           mountPath: /app/data
