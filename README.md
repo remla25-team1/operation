@@ -1,4 +1,4 @@
-# Operation
+# REMLA-25, Team 1, Operation
 This repository contains a modular tweet sentiment analysis system, organized into six individual repositories under the `remla25-team1` organization:
 
 * **app**: Front-end application and API gateway responsible for serving pages and forwarding model inference requests.
