@@ -16,8 +16,26 @@ We hypothesize that `app:v2` will have a lower average `sentiment_response_time`
 - Prometheus scrapes app-specific metrics, and Grafana visualizes latency distribution.
 
 ### Result
+The screenshot below shows the Prometheus metrics collected during the experiment. 
+
+![metrics screenshot](images/metrics_screenshot.png.png)
+
+### Observations
+The `sentiment_source_total counter` clearly distinguishes between predictions served from the model (`source="model"`) and from Redis cache (`source="cache"`):
+
+- Model-based responses: 4
+
+- Cache-based responses: 21
+
+The `sentiment_response_time_seconds histogram` shows:
+
+- Responses from cache (`source="cache"`) consistently completed in under **0.01 seconds**.
+
+- Model-based predictions (`source="model"`) had significantly higher response time buckets, reaching up to **~0.5 seconds**.
+
 
 
 ### Decision
+Based on observed metrics, v2 reduced avg inference time a lot. we recommend rolling it out to all users.
 
 
