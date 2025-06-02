@@ -8,6 +8,7 @@
       - application-config.yaml
       - app-v1.yaml
       - app-v2.yaml
+      - redis.yaml
       - istio/gateway.yaml
       - istio/destinationrules.yaml
       - istio/virtualservices.yaml
