@@ -8,6 +8,17 @@
 - **lib-version:** [repo](https://github.com/remla25-team1/lib-version) | latest release: [`v0.1.4`](https://github.com/remla25-team1/lib-version/releases/latest)
 <!-- REPO LINKS END -->
 
+## Comments for A5:
+
+Files to inspect our traffic deployments: https://github.com/remla25-team1/operation/tree/main/k8s
+
+The Deployment Documentation can be found at: https://github.com/remla25-team1/operation/blob/main/docs/deployment.md
+
+The Continuous Experiment Documentaion: https://github.com/remla25-team1/operation/blob/main/docs/continuous-experimentation.md
+
+The Extension Proposal: https://github.com/remla25-team1/operation/blob/main/docs/extension.md
+
+
 ## Comments for A4:
 Latest successful build can be found at https://github.com/remla25-team1/model-training/releases.
 Files to inspect are our tests in: https://github.com/remla25-team1/model-training/tree/main/tests
