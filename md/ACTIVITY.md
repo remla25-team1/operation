@@ -138,6 +138,8 @@ Approved PR: https://github.com/remla25-team1/operation/pull/15 (related to A5)
 ### -- Vivian: --
 Created PR: https://github.com/remla25-team1/model-training/pull/11 (related to A4)
 
+Approved PR: https://github.com/remla25-team1/operation/pull/16 (related to A5)
+
 Approved PR: https://github.com/remla25-team1/model-training/pull/9 (related to A4)
 
 ### -- Yifan: --
