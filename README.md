@@ -1,5 +1,4 @@
-# Project Overview
-
+# Operation
 This repository contains a modular tweet sentiment analysis system, organized into six individual repositories under the `remla25-team1` organization:
 
 * **app**: Front-end application and API gateway responsible for serving pages and forwarding model inference requests.
@@ -11,9 +10,23 @@ This repository contains a modular tweet sentiment analysis system, organized in
 
 Each component can be developed, tested, and deployed independently, yet they form a cohesive machine learning-powered web service.
 
+## Contents
+
+- [Install & Run](#install--run)
+- [Clone the Repository](#clone-the-repository)
+- [Running Application on Kubernetes Cluster](#running-application-on-kubernetes-cluster)
+- [Other Commands](#other-commands)
+- [Other Useful Stuff](#other-useful-stuff)
+- [Helm](#helm)
+- [Setup Prometheus](#setup-prometheus)
+- [Grafana](#grafana)
+  - [Auto-load via ConfigMap](#auto-load-via-configmap)
+  - [Import the Dashboard Manually](#import-the-dashboard-manually)
+- [Testing Istio](#testing-istio)
+
 ## Install & Run
 
-Make sure you have installed:
+Make sure you have the following installed:
 - **Docker** and **Docker Compose** installed: [Install Docker & Docker Compose](https://docs.docker.com/compose/install/)
 - **Vagrant**
 - **Ansible**
@@ -53,7 +66,6 @@ vagrant destroy
 
 docker network ls # here you can check if the network is still live and remove it 
 ```
-
 
 All VMs mount the same shared VirtualBox folder as /mnt/shared into the VM. You can check this yourself. Here is a little proof:
 ```bash
@@ -133,6 +145,7 @@ Browser --> http://192.168.56.101:31224
 ```
 
 (Optional?) update ```/etc/hosts``` on host: add ```<node-ip> app.local``` 
+
 #### Other commands:
 Triger a rollout restart:
 ```bash
@@ -192,7 +205,7 @@ helm upgrade --install tweet-sentiment ./helm_chart
 helm upgrade --install tweet-sentiment ./helm_chart -f helm_chart/values.yaml
 ```
 
-## Setup Promethues
+## Setup Prometheus
 
 ```bash
 helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
