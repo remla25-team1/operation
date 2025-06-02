@@ -131,9 +131,9 @@ https://github.com/remla25-team1/operation/pull/14 (related to A5)
 Approved PR: https://github.com/remla25-team1/model-training/pull/10
 
 ### -- Sofia: --
-Created PR: 
+Created PR: https://github.com/remla25-team1/operation/pull/16 (related to A5)
 
-Approved PR:
+Approved PR: https://github.com/remla25-team1/operation/pull/15 (related to A5)
 
 ### -- Vivian: --
 Created PR: 
