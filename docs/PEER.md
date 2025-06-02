@@ -14,7 +14,7 @@ Files to inspect our traffic deployments: https://github.com/remla25-team1/opera
 
 The Deployment Documentation can be found at: https://github.com/remla25-team1/operation/blob/main/docs/deployment.md
 
-The Continuous Experiment Documentaion: https://github.com/remla25-team1/operation/blob/main/docs/continuous-experimentation.md
+The Continuous Experiment Documentation: https://github.com/remla25-team1/operation/blob/main/docs/continuous-experimentation.md
 
 The Extension Proposal: https://github.com/remla25-team1/operation/blob/main/docs/extension.md
 
