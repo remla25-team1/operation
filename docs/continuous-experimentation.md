@@ -18,7 +18,7 @@ We hypothesize that `app:v2` will have a lower average `sentiment_response_time`
 ### Result
 The screenshot below shows the Prometheus metrics collected during the experiment. 
 
-![metrics screenshot](images/metrics_screenshot.png.png)
+![metrics screenshot](images/metrics_screenshot.png)
 
 ### Observations
 The `sentiment_source_total counter` clearly distinguishes between predictions served from the model (`source="model"`) and from Redis cache (`source="cache"`):
@@ -36,6 +36,21 @@ The `sentiment_response_time_seconds histogram` shows:
 
 
 ### Decision
-Based on observed metrics, v2 reduced avg inference time a lot. we recommend rolling it out to all users.
+Based on observed metrics, we could calculate that
+- Model-based (`source="model"`):
+    - `sentiment_response_time_seconds_sum`: `~0.4681`
+    - `sentiment_response_time_seconds_count`: `4`
+
+    - → **Avg time (model)** = `0.4681 / 4` ≈ **117 ms**
+
+- Cache-based (`source="cache"`):
+
+    - `sentiment_response_time_seconds_sum`: `~0.0053`
+
+    - s`entiment_response_time_seconds_count`:`21`
+
+    - → **Avg time (cache)** = `0.0053 / 21` ≈ **0.25 ms**
+ 
+ Therefore, v2 reduced avg inference time from **117ms** to **0.25ms**, which is a **468x improvement**. we recommend rolling it out to all users.
 
 
