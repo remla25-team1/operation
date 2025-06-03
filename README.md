@@ -55,7 +55,15 @@ ansible-playbook -i shared/inventory.ini migrate.yaml \
   -e github_username=<your-github-username> \
   -e github_pat=<your-github-pat> \
   -e github_email=<your-email>
+```
 
+Double check if ```KUBECONFIG``` correctly points to the new cluster. Run
+```bash
+echo $KUBECONFIG
+# it should output /path/to/project/operation/kubeconfig-vagrant
+# if not run
+export KUBECONFIG=$(pwd)/kubeconfig-vagrant
+echo $KUBECONFIG
 ```
 
 When running the ```migrate.yaml``` playbook, you will be asked for your ```BECOME``` password. This is so that the playbook can run commands in ```sudo``` mode. Simply fill in your host password here.
@@ -69,15 +77,6 @@ docker network ls # here you can check if the network is still live and remove i
 
 All VMs mount the same shared VirtualBox folder as /mnt/shared into the VM. You can check this yourself. Here is a little proof:
 ```bash
-vagrant@k8s-ctrl:~$ cd ..
-vagrant@k8s-ctrl:/home$ cd ..
-vagrant@k8s-ctrl:/$ ls
-bin                boot   dev  home  lib.usr-is-merged  media  opt   root  sbin                snap  swap.img  tmp  vagrant         var
-bin.usr-is-merged  cdrom  etc  lib   lost+found         mnt    proc  run   sbin.usr-is-merged  srv   sys       usr  vagrant_shared
-vagrant@k8s-ctrl:/$ cd mnt
-vagrant@k8s-ctrl:/mnt$ ls
-shared
-vagrant@k8s-ctrl:/mnt$ cd shared
 vagrant@k8s-ctrl:/mnt/shared$ ls
 admin.conf  ansible.cfg  inventory.ini
 ```

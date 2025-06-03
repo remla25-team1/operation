@@ -76,7 +76,7 @@
     - name: Fetch kubeconfig for host machine use
       fetch:
         src: /home/vagrant/.kube/config
-        dest: ./kubeconfig-vagrant
+        dest: ./kubeconfig-vagrant # this saves the kube-config in the project directory
         flat: yes
       become: yes
       become_user: vagrant
@@ -97,8 +97,8 @@
       ansible.builtin.lineinfile:
         path: "{{ rc_file }}"
         create: yes
-        regexp: '^export KUBECONFIG=.*kubeconfig-vagrant'
-        line: 'export KUBECONFIG={{ playbook_dir }}/kubeconfig-vagrant'
+        regexp: '^export KUBECONFIG=.*kubeconfig-vagrant' 
+        line: 'export KUBECONFIG=$(pwd)/kubeconfig-vagrant' #export KUBECONFIG={{ playbook_dir }}/kubeconfig-vagrant'
         insertafter: EOF
 
     - name: Wait for pods to be ready
