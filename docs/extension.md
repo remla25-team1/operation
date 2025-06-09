@@ -36,7 +36,7 @@ We propose extending the release pipeline with a **trigger-based mechanism** tha
 
 ### Visual Overview
 
-![image info](visualization/extension.png)
+![image info](images/extension.png)
 
 ### Experimental Evaluation
 
