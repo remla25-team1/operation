@@ -4,6 +4,10 @@ services:
     ports:
       - "${APP_SERVICE_PORT}:${CONTAINER_PORT}"
     environment:
+      - REDIS_HOST=${REDIS_HOST}
+      - REDIS_PORT=${REDIS_PORT}
+      - REDIS_DB=${REDIS_DB}
+      - CACHE_TTL=${CACHE_TTL}
       - MODEL_SERVICE_HOST=model-service
       - APP_VERSION=${APP_SERVICE_VERSION}
       - MODEL_SERVICE_VERSION=${MODEL_SERVICE_VERSION}
@@ -13,7 +17,7 @@ services:
     volumes:
       - ./app_data:/app/data
     networks:
-      - app-network
+      - app-network 
 
   model-service:
     image: ${MODEL_SERVICE_IMAGE}:${MODEL_SERVICE_VERSION}
@@ -29,6 +33,15 @@ services:
       - ./cached_model:/app/output
     networks:
       - app-network
+   
+
+  redis:
+    image: redis:7
+    container_name: redis
+    ports:
+      - "6379:6379"
+    networks:
+      - app-network  
 
 networks:
   app-network:
