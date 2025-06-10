@@ -8,7 +8,7 @@ sourced=0
 
 # ──────────────────────────────────────────────────────────────────────────────
 # Vagrant Teardown
-echo "→ Destroying the Vagrant cluster..."
+echo "-> Destroying the Vagrant cluster..."
 vagrant destroy -f
 
 # ──────────────────────────────────────────────────────────────────────────────
@@ -27,14 +27,14 @@ fi
 # ──────────────────────────────────────────────────────────────────────────────
 # Unset KUBECONFIG
 if [[ -n "${KUBECONFIG:-}" ]]; then
-  echo "→ Unsetting KUBECONFIG: $KUBECONFIG"
+  echo "-> Unsetting KUBECONFIG: $KUBECONFIG"
   if [[ $sourced -eq 1 ]]; then
     unset KUBECONFIG
   else
     echo "Note: KUBECONFIG was set in the parent shell — run 'unset KUBECONFIG' manually or source this script to fully clean up the environment."
   fi
 else
-  echo "→ No KUBECONFIG variable set. Nothing to unset."
+  echo "-> No KUBECONFIG variable set. Nothing to unset."
 fi
 
 # ──────────────────────────────────────────────────────────────────────────────
