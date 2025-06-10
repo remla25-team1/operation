@@ -42,8 +42,7 @@ Clone the **operation** repository from GitHub (e.g., using SSH):
    ```
 
 ## Running Application on Kubernetes Cluster
-Navigate into ```operation``` dir and run the code below.
-Set up a ```imagePullSecrets``` for GHCR: first generate a new token (classic) on Github. Give it scopes ```read:packages, repo```. Copy the token and paste it in the command below:
+Navigate into ```operation``` dir and run the code below. Set up a ```imagePullSecrets``` for GHCR: first generate a new token (classic) on Github. Give it scopes ```read:packages, repo```. Copy the token and paste it in the command below:
 
 ```bash
 vagrant up
@@ -73,12 +72,6 @@ To tear down the cluster run:
 vagrant destroy
 
 docker network ls # here you can check if the network is still live and remove it 
-```
-
-All VMs mount the same shared VirtualBox folder as /mnt/shared into the VM. You can check this yourself. Here is a little proof:
-```bash
-vagrant@k8s-ctrl:/mnt/shared$ ls
-admin.conf  ansible.cfg  inventory.ini
 ```
 
 With NGINX installed, we can see if the controller is deployed to the ```ingress-nginx``` namespace:

@@ -5,3 +5,4 @@ cached_model/
 .DS_Store
 kubeconfig-vagrant
 venv
+.run.sh.state

@@ -1,49 +1,9 @@
-# apiVersion: apps/v1
-# kind: Deployment
-# metadata:
-#   name: app
-# spec:
-#   replicas: 1
-#   selector:
-#     matchLabels:
-#       app: app
-#   template:
-#     metadata:
-#       labels:
-#         app: app
-#     spec:
-#       imagePullSecrets:
-#       - name: ghcr-secret
-#       nodeSelector:
-#         node-role: app      # This will schedule the app pod only on nodes labeled with node-role=app
-#         kubernetes.io/hostname: k8s-node-2 # we will run model-service on node 2
-#       containers:
-#       - name: app
-#         image: ghcr.io/remla25-team1/app:latest        
-#         ports:
-#         - containerPort: 8080
-#         envFrom:
-#         - configMapRef:
-#             name: application-config
-#         volumeMounts:
-#         - name: app-data
-#           mountPath: /app/data
-#         - name: shared-data
-#           mountPath: /mnt/shared
-#       volumes:
-#       - name: app-data
-#         emptyDir: {}
-#       - name: shared-data
-#         hostPath:
-#           path: /mnt/shared
-#           type: Directory
-# ---
 apiVersion: v1
 kind: Service
 metadata:
   name: app
 spec:
-  type: ClusterIP #NodePort
+  type: ClusterIP
   selector:
     app: app
   ports:
