@@ -1,0 +1,44 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-app-v1
+  labels:
+    app: {{ .Release.Name }}-app
+    version: v1
+spec:
+  replicas: {{ .Values.app.v1.replicaCount }}
+  selector:
+    matchLabels:
+      app: {{ .Release.Name }}-app
+      version: v1
+  template:
+    metadata:
+      labels:
+        app: {{ .Release.Name }}-app
+        version: v1
+    spec:
+      imagePullSecrets:
+        - name: {{ .Values.app.imagePullSecret }}
+      nodeSelector:
+        node-role: {{ .Values.app.v1.nodeSelector.role }}
+        kubernetes.io/hostname: {{ .Values.app.v1.nodeSelector.hostname }}
+      containers:
+        - name: app
+          image: "{{ .Values.app.image.repository }}:{{ .Values.app.v1.image.tag }}"
+          ports:
+            - containerPort: {{ .Values.app.service.targetPort }}
+          envFrom:
+            - configMapRef:
+                name: {{ .Release.Name }}-application-config
+          volumeMounts:
+            - name: app-data
+              mountPath: {{ .Values.app.v1.mounts.data }}
+            - name: shared-data
+              mountPath: {{ .Values.app.v1.mounts.shared }}
+      volumes:
+        - name: app-data
+          emptyDir: {}
+        - name: shared-data
+          hostPath:
+            path: {{ .Values.app.v1.mounts.shared }}
+            type: Directory

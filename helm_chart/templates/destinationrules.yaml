@@ -1,0 +1,20 @@
+{{- /*
+Generate one DestinationRule per key in .Values.destinationRules.
+The key (e.g. "app" or "modelService") is used to build the resource name,
+and we pull host/subset data from the map.
+*/ -}}
+{{- range $key, $dr := .Values.destinationRules }}
+apiVersion: networking.istio.io/v1beta1
+kind: DestinationRule
+metadata:
+  name: {{ printf "%s-%s" .Release.Name $key | trunc 63 | trimSuffix "-" }}
+spec:
+  host: {{ $dr.host }}
+  subsets:
+    {{- range $dr.subsets }}
+    - name: {{ .name }}
+      labels:
+        version: {{ .version }}
+    {{- end }}
+---
+{{- end }}

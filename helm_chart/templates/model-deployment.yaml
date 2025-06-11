@@ -2,8 +2,10 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: {{ .Release.Name }}-model-service
+  labels:
+    app: {{ .Release.Name }}-model-service
 spec:
-  replicas: 1
+  replicas: {{ .Values.modelService.replicaCount }}
   selector:
     matchLabels:
       app: {{ .Release.Name }}-model-service
@@ -13,20 +15,27 @@ spec:
         app: {{ .Release.Name }}-model-service
     spec:
       imagePullSecrets:
-        - name: ghcr-secret
+        - name: {{ .Values.modelService.imagePullSecret }}
+      nodeSelector:
+        node-role: {{ .Values.modelService.nodeSelector.role }}
+        kubernetes.io/hostname: {{ .Values.modelService.nodeSelector.hostname }}
       containers:
         - name: model-service
-          image: "{{ .Values.model.image }}:{{ .Values.model.version }}"
-          imagePullPolicy: IfNotPresent
+          image: "{{ .Values.modelService.image.repository }}:{{ .Values.modelService.image.tag }}"
           ports:
-            - containerPort: {{ .Values.model.containerPort }}
+            - containerPort: {{ .Values.modelService.containerPort }}
           envFrom:
             - configMapRef:
-                name: {{ .Release.Name }}-model-configmap
+                name: {{ .Values.modelService.configMapName }}
           volumeMounts:
+            - name: app-data
+              mountPath: {{ .Values.modelService.mounts.appData }}
             - name: shared-data
-              mountPath: /mnt/shared
+              mountPath: {{ .Values.modelService.mounts.sharedData }}
       volumes:
+        - name: app-data
+          emptyDir: {}
         - name: shared-data
           hostPath:
-            path: {{ .Values.sharedVolumePath }}
+            path: {{ .Values.modelService.mounts.sharedData }}
+            type: Directory

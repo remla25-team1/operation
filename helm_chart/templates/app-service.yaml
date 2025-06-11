@@ -3,13 +3,11 @@ kind: Service
 metadata:
   name: {{ .Release.Name }}-app
   labels:
-    app.kubernetes.io/name: tweet-sentiment 
+    app: {{ .Release.Name }}-app
 spec:
+  type: {{ .Values.app.service.type }}
   selector:
     app: {{ .Release.Name }}-app
   ports:
-    - name: http
-      protocol: TCP
-      port: {{ .Values.app.servicePort }}
-      targetPort: {{ .Values.app.containerPort }}
-  type: NodePort
+    - port: {{ .Values.app.service.port }}
+      targetPort: {{ .Values.app.service.targetPort }}

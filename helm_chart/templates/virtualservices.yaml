@@ -1,0 +1,43 @@
+{{- /*
+Generate one VirtualService per entry in .Values.virtualServices
+Key (e.g. "app", "modelService") becomes part of the resource name.
+*/ -}}
+{{- range $key, $vs := .Values.virtualServices }}
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: {{ printf "%s-%s" .Release.Name $key | trunc 63 | trimSuffix "-" }}
+spec:
+  hosts:
+    {{- range $vs.hosts }}
+    - {{ . }}
+    {{- end }}
+  gateways:
+    # Reference the gateway created by this chart:
+    - {{ printf "%s-%s" .Release.Name $vs.gatewayReleaseNameSuffix | trunc 63 | trimSuffix "-" }}
+  http:
+    {{- range $vs.http }}
+    - {{- if .match }}
+      match:
+        {{- range $m := .match }}
+        {{- if $m.headers }}
+        headers:
+          {{- range $h, $v := $m.headers }}
+          {{ $h }}:
+            exact: {{ $v | quote }}
+          {{- end }}
+        {{- end }}
+        {{- end }}
+      {{- end }}
+      route:
+        {{- range .route }}
+        - destination:
+            host: {{ .host }}
+            subset: {{ .subset }}
+          {{- if .weight }}
+          weight: {{ .weight }}
+          {{- end }}
+        {{- end }}
+    {{- end }}
+---
+{{- end }}

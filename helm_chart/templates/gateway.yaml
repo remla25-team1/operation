@@ -1,0 +1,20 @@
+apiVersion: networking.istio.io/v1beta1
+kind: Gateway
+metadata:
+  name: {{ .Release.Name }}-{{ .Values.gateway.name }}
+spec:
+  selector:
+    {{- range $key, $val := .Values.gateway.selector }}
+    {{ $key }}: {{ $val }}
+    {{- end }}
+  servers:
+    {{- range .Values.gateway.servers }}
+    - port:
+        number: {{ .port.number }}
+        name: {{ .port.name }}
+        protocol: {{ .port.protocol }}
+      hosts:
+        {{- range .hosts }}
+        - {{ . }}
+        {{- end }}
+    {{- end }}

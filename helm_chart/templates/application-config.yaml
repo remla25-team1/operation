@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Release.Name }}-application-config
+data:
+  # App config
+  APP_VERSION:       "{{ .Values.config.appVersion }}"
+  MODEL_SERVICE_VERSION: "{{ .Values.config.modelServiceVersion }}"
+  PORT:              "{{ .Values.config.port }}"
+
+  # Model-service config
+  MODEL_SERVICE_HOST: "{{ .Values.config.modelServiceHost }}"
+  MODEL_SERVICE_PORT: "{{ .Values.config.modelServicePort }}"
+
+  # Listener
+  HOST:              "{{ .Values.config.host }}"
