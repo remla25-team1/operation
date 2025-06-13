@@ -58,9 +58,9 @@ app:
       # Number of replicas for v1
     replicaCount: 1
 
-    # Image tag for v1
+    # Image tag for v2
     image:
-      tag: "0.0.6-pre-20250528-002" # change this to latest?
+      tag: "0.0.6-pre-20250602-001" # change this to latest?
 
     # NodeSelector constraints for v2
     nodeSelector:
@@ -183,44 +183,46 @@ virtualServices:
     hosts: ["*"]
     # Use the Gateway resource from your chart (releaseName + "-gateway")
     gatewayReleaseNameSuffix: gateway
+    serviceHostNameSuffix: app  
 
     http:
       # 1) “Canary” header forces v2 of app
       - match:
-          headers:
+        - headers:
             user-group:
-              exact: "canary"
+              exact: canary
         route:
-          - host: app
+          - host: ""
             subset: v2
 
       # 2) All other app-traffic: 90% v1, 10% v2
       - route:
-          - host: app
+          - host: ""
             subset: v1
             weight: 90
-          - host: app
+          - host: ""
             subset: v2
             weight: 10
 
   modelService:
     hosts: ["*"]
     gatewayReleaseNameSuffix: gateway
+    serviceHostNameSuffix: model-service  
 
     http:
       - match:
-          headers:
+        - headers:
             user-group:
               exact: "canary"
         route:
-          - host: model-service
+          - host: ""
             subset: v2
     # Weighted split for all other model-service calls
       - route:
-          - host: model-service
+          - host: ""
             subset: v1
             weight: 90
-          - host: model-service
+          - host: ""
             subset: v2
             weight: 10
 # ─────────────────────────────────────────────────────────────────────────────

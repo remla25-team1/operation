@@ -7,9 +7,9 @@ and we pull host/subset data from the map.
 apiVersion: networking.istio.io/v1beta1
 kind: DestinationRule
 metadata:
-  name: {{ printf "%s-%s" .Release.Name $key | trunc 63 | trimSuffix "-" }}
+  name: {{ printf "%s-%s" $.Release.Name $key | lower | trunc 63 }}
 spec:
-  host: {{ $dr.host }}
+  host: {{ printf "%s-%s" $.Release.Name $dr.host | trunc 63  }}
   subsets:
     {{- range $dr.subsets }}
     - name: {{ .name }}

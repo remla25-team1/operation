@@ -4,17 +4,15 @@ metadata:
   name: {{ .Release.Name }}-{{ .Values.gateway.name }}
 spec:
   selector:
-    {{- range $key, $val := .Values.gateway.selector }}
-    {{ $key }}: {{ $val }}
-    {{- end }}
+{{ .Values.gateway.selector | toYaml | nindent 4 }}
+
   servers:
-    {{- range .Values.gateway.servers }}
-    - port:
-        number: {{ .port.number }}
-        name: {{ .port.name }}
-        protocol: {{ .port.protocol }}
-      hosts:
-        {{- range .hosts }}
-        - {{ . }}
-        {{- end }}
-    {{- end }}
+{{- range .Values.gateway.servers }}
+  - port:
+      number: {{ .port.number }}
+      name: {{ .port.name }}
+      protocol: {{ .port.protocol }}
+    hosts:
+{{ .hosts | toYaml | nindent 6 }}
+{{- end }}
+

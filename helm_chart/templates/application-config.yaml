@@ -9,8 +9,9 @@ data:
   PORT:              "{{ .Values.config.port }}"
 
   # Model-service config
-  MODEL_SERVICE_HOST: "{{ .Values.config.modelServiceHost }}"
+  MODEL_SERVICE_HOST: {{ printf "%s-%s" $.Release.Name $.Values.config.modelServiceHost }}
   MODEL_SERVICE_PORT: "{{ .Values.config.modelServicePort }}"
+  
 
   # Listener
   HOST:              "{{ .Values.config.host }}"

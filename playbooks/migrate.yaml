@@ -61,28 +61,63 @@
       environment:
         KUBECONFIG: /home/vagrant/.kube/config
 
-    - name: Install app if not present
-      command: >
-        helm install {{ helm_chart_name }} {{ helm_chart_path }}
-        --namespace default
-        --create-namespace
-        --wait --timeout=120s
-        --set image.tag={{ app_image_tag | default('latest') }} 
-      when: helm_status.rc != 0
+
+    - name: Check if Prometheus stack is already installed
+      command: helm status prometheus --namespace monitoring
+      register: prometheus_status
+      failed_when: false
+      changed_when: false
+      environment:
+        KUBECONFIG: /home/vagrant/.kube/config
+
+    - name: Add prometheus-community repo (if not exists)
+      command: helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+      when: prometheus_status.rc != 0
       become_user: vagrant
       environment:
         KUBECONFIG: /home/vagrant/.kube/config
 
-    - name: Upgrade app if present
-      command: >
-        helm upgrade {{ helm_chart_name }} {{ helm_chart_path }}
-        --namespace default
-        --wait --timeout=120s
-        --set image.tag={{ app_image_tag | default('latest') }}
-      when: helm_status.rc == 0
+    - name: Update helm repos
+      command: helm repo update
+      when: prometheus_status.rc != 0
       become_user: vagrant
       environment:
         KUBECONFIG: /home/vagrant/.kube/config
+
+    - name: Install Prometheus kube-prometheus-stack
+      command: >
+        helm install prometheus prometheus-community/kube-prometheus-stack
+        --namespace monitoring
+        --create-namespace
+        --wait --timeout=300s
+      when: prometheus_status.rc != 0
+      become_user: vagrant
+      environment:
+        KUBECONFIG: /home/vagrant/.kube/config
+
+
+    - name: Install app if not present
+      command: >
+        helm upgrade --install {{ helm_chart_name }} {{ helm_chart_path }}
+        --namespace default
+        --create-namespace
+        --wait --timeout=120s
+        --set image.tag={{ app_image_tag | default('latest') }} 
+      become_user: vagrant
+      environment:
+        KUBECONFIG: /home/vagrant/.kube/config
+
+
+    # - name: Upgrade app if present
+    #   command: >
+    #     helm upgrade {{ helm_chart_name }} {{ helm_chart_path }}
+    #     --namespace default
+    #     --wait --timeout=120s
+    #     --set image.tag={{ app_image_tag | default('latest') }}
+    #   when: helm_status.rc == 0
+    #   become_user: vagrant
+    #   environment:
+    #     KUBECONFIG: /home/vagrant/.kube/config
 
     - name: Label application nodes
       command: kubectl label node {{ item.name }} node-role={{ item.role }} --overwrite

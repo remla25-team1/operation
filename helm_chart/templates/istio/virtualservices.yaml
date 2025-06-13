@@ -1,43 +1,36 @@
 {{- /*
 Generate one VirtualService per entry in .Values.virtualServices
-Key (e.g. "app", "modelService") becomes part of the resource name.
+Key (e.g. "app", "modelservice") becomes part of the resource name.
 */ -}}
 {{- range $key, $vs := .Values.virtualServices }}
 apiVersion: networking.istio.io/v1beta1
 kind: VirtualService
 metadata:
-  name: {{ printf "%s-%s" .Release.Name $key | trunc 63 | trimSuffix "-" }}
+  name: {{ printf "%s-%s" $.Release.Name $key | lower | trunc 63 }}
 spec:
   hosts:
-    {{- range $vs.hosts }}
-    - {{ . }}
-    {{- end }}
+{{ $vs.hosts | toYaml | nindent 4 }}
   gateways:
     # Reference the gateway created by this chart:
-    - {{ printf "%s-%s" .Release.Name $vs.gatewayReleaseNameSuffix | trunc 63 | trimSuffix "-" }}
+    - {{ printf "%s-%s" $.Release.Name $vs.gatewayReleaseNameSuffix | trunc 63 }}
   http:
-    {{- range $vs.http }}
-    - {{- if .match }}
+{{- range $http := $vs.http }}
+    - 
+      {{- if $http.match }}
       match:
-        {{- range $m := .match }}
-        {{- if $m.headers }}
-        headers:
-          {{- range $h, $v := $m.headers }}
-          {{ $h }}:
-            exact: {{ $v | quote }}
-          {{- end }}
-        {{- end }}
-        {{- end }}
+{{- range $m := $http.match }}
+        - {{ $m | toYaml | nindent 10 }}
+{{- end }}
       {{- end }}
       route:
-        {{- range .route }}
+{{- range $route := $http.route }}
         - destination:
-            host: {{ .host }}
-            subset: {{ .subset }}
-          {{- if .weight }}
-          weight: {{ .weight }}
-          {{- end }}
-        {{- end }}
-    {{- end }}
+            host: {{ printf "%s-%s" $.Release.Name $vs.serviceHostNameSuffix | trunc 63 }}
+            subset: {{ $route.subset }}
+{{- if $route.weight }}
+          weight: {{ $route.weight }}
+{{- end }}
+{{- end }}
+{{- end }}
 ---
 {{- end }}
