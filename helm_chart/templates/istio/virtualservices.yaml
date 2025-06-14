@@ -16,12 +16,16 @@ spec:
   http:
 {{- range $http := $vs.http }}
     - 
-      {{- if $http.match }}
+{{- if $http.match }}
       match:
 {{- range $m := $http.match }}
-        - {{ $m | toYaml | nindent 10 }}
+        - headers:
+{{- range $hkey, $hval := $m.headers }}
+            {{ $hkey | quote }}:
+              exact: {{ $hval.exact | quote }}
 {{- end }}
-      {{- end }}
+{{- end }}
+{{- end }}
       route:
 {{- range $route := $http.route }}
         - destination:
