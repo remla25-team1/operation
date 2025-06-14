@@ -178,11 +178,25 @@ Approved PR:
 
 
 # Week 8
+### -- Anna: --
+Created PR: 
 
-###-- Vivian: --
+Approved PR: 
+
+### -- Sofia: --
+Created PR: 
+
+Approved PR: 
+
+### -- Vivian: --
 Created PR: https://github.com/remla25-team1/model-training/pull/12 (related to A4)
 
-Approved PR:
+Approved PR: 
+
+### -- Yifan: --
+Created PR: 
+
+Approved PR: 
 
 # Week 9
 ### -- Anna: --
