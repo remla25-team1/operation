@@ -96,6 +96,15 @@
         KUBECONFIG: /home/vagrant/.kube/config
 
 
+    - name: Label application nodes
+      command: kubectl label node {{ item.name }} node-role={{ item.role }} --overwrite
+      loop:
+        - { name: "k8s-node-1", role: "model" }
+        - { name: "k8s-node-2", role: "app" }
+      environment:
+        KUBECONFIG: /home/vagrant/.kube/config
+
+
     - name: Install app if not present
       command: >
         helm upgrade --install {{ helm_chart_name }} {{ helm_chart_path }}
@@ -106,26 +115,7 @@
       become_user: vagrant
       environment:
         KUBECONFIG: /home/vagrant/.kube/config
-
-
-    # - name: Upgrade app if present
-    #   command: >
-    #     helm upgrade {{ helm_chart_name }} {{ helm_chart_path }}
-    #     --namespace default
-    #     --wait --timeout=120s
-    #     --set image.tag={{ app_image_tag | default('latest') }}
-    #   when: helm_status.rc == 0
-    #   become_user: vagrant
-    #   environment:
-    #     KUBECONFIG: /home/vagrant/.kube/config
-
-    - name: Label application nodes
-      command: kubectl label node {{ item.name }} node-role={{ item.role }} --overwrite
-      loop:
-        - { name: "k8s-node-1", role: "model" }
-        - { name: "k8s-node-2", role: "app" }
-      environment:
-        KUBECONFIG: /home/vagrant/.kube/config
+ 
 
     - name: Fetch kubeconfig for local use
       fetch:
