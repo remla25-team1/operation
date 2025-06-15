@@ -1,0 +1,27 @@
+{{- if .Values.prometheusRule.enabled }}
+{{- range .Values.monitoring.targets }}
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata: 
+  name: {{ $.Release.Name }}-{{ .name }}-rules
+  namespace: {{ $.Values.prometheusRule.namespace }}
+  labels:
+    app: {{ $.Release.Name }}-{{ .name }}
+    release: {{ $.Values.monitoring.release }}
+spec:
+  groups:
+  - name: {{ $.Values.prometheusRule.groupName }}-{{ .name }}.rules
+    rules: 
+    - alert: {{ $.Values.prometheusRule.name }}-{{ .name }}
+      expr: {{ $.Values.prometheusRule.expr }}
+      for: {{ $.Values.prometheusRule.for }}
+      labels:
+        severity: {{ $.Values.prometheusRule.severity }}
+      annotations:
+        summary: {{ $.Values.prometheusRule.summary }}
+        description: {{ $.Values.prometheusRule.description }}
+---
+{{- end }}
+{{- end }}
+
+{{- if .Values.alertmanager.enabled }}
