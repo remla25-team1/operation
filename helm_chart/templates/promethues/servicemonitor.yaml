@@ -3,8 +3,7 @@
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
-  name: {{ $.Release.Name }}-monitor-{{ .name }}
-  namespace: {{ $.Values.monitoring.namespace }}
+  name: {{ $.Release.Name }}-{{ .name }}-monitor
   labels:
     app: {{ $.Release.Name }}-{{ .name }}
     release: {{ $.Values.monitoring.release }}
@@ -12,6 +11,7 @@ spec:
   selector:
     matchLabels:
       app: {{ $.Release.Name }}-{{ .name }}
+      app.kubernetes.io/name: {{ $.Release.Name }}-{{ .name }}
   namespaceSelector:
     matchNames:
       - {{ $.Release.Namespace }}

@@ -4,6 +4,8 @@ metadata:
   name: {{ .Release.Name }}-app
   labels:
     app: {{ .Release.Name }}-app
+    app.kubernetes.io/name: {{ .Release.Name }}-app
+    
 spec:
   type: {{ .Values.app.service.type }}
   selector:

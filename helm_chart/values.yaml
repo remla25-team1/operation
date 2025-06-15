@@ -17,6 +17,9 @@ app:
   service:
     # Type of Kubernetes Service (ClusterIP, NodePort, LoadBalancer, etc.)
     type: ClusterIP
+    
+    # Named port used by the Service
+    name: web
 
     # Port the Service exposes
     port: 8080
@@ -229,7 +232,23 @@ virtualServices:
 secret:
   key: "secret" 
 # ─────────────────────────────────────────────────────────────────────────────
+
+prometheus:
+  prometheusSpec:
+    serviceMonitorSelector: {}
+    serviceMonitorNamespaceSelector: {}
+
+# ─────────────────────────────────────────────────────────────────────────────
 monitoring:
   enabled: true
-  
-  release: prometheus  
+  namespace: monitoring
+  release: prometheus
+  targets:
+    - name: app
+      port: web
+      path: /metrics
+      interval: 15s
+    # - name: v2
+    #   port: web
+    #   path: /metrics
+    #   interval: 15s
