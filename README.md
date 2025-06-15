@@ -63,6 +63,13 @@ echo $KUBECONFIG
 
 NOTE: for any new shell you spawn, you need to repeat this exporting of the ```KUBECONFIG``` variable.
 
+
+If you want to upgrade the service to adapt any changes, just rerun
+
+```bash
+./run-all.sh
+```
+
 When you are finished, tear down the cluster with
 ```bash
 chmod +x cleanup.sh
@@ -136,33 +143,34 @@ kubectl get pods -o wide
 # model-service-5987884b9-mjjln   1/1     Running   0          46m   10.244.1.7   k8s-node-1   <none>           <none>
 ```
 
-## Helm
 
-```bash
-helm install tweet-sentiment-app ./helm_chart     
+
+## Check if Prometheus works
+
+### 1. Access Prometheus Web UI
+```sh
+kubectl port-forward -n monitoring svc/prometheus-kube-prometheus-prometheus 9090:9090
 ```
 
-after any change you have done
-```bash
-helm upgrade --install tweet-sentiment ./helm_chart
+Open [http://localhost:9090](http://localhost:9090) in your browser.
 
-# or
-helm upgrade --install tweet-sentiment ./helm_chart -f helm_chart/values.yaml
+To verify that your metrics endpoints are being scraped:
+
+- Go to the Prometheus UI (`Status` → `Targets`)
+- Look for your application's Service name or Pod name in the targets list
+- Check the status (should be "UP")
+
+### 2. Test if metrics endpoint is reachable from inside the cluster
+
+```sh
+kubectl port-forward svc/sentiment-app-app 8080:8080
+
+curl http://localhost:8080/metrics
 ```
 
-## Setup Prometheus
 
-```bash
-helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
 
-helm repo update
-
-helm install prometheus prometheus-community/kube-prometheus-stack \
-  -n monitoring --create-namespace \
-  -f dashboard/grafana-custom-values.yaml
-```
-
-## Grafana
+## Grafana 
 We provide a pre-configured dashboard for monitoring with 4 pannels:
 
 - Request count by sentiment (sentiment_requests_total)
@@ -173,12 +181,12 @@ We provide a pre-configured dashboard for monitoring with 4 pannels:
 
 - In-progress requests (sentiment_requests_in_progress)
 
-### Auto-load via ConfigMap 
+### Auto-load via ConfigMap (Not available yet.)
 ```bash
 kubectl apply -f dashboard/tweet-sentiment-dashboard-configmap.yaml
 ```
 
-### Import the dashboard manually
+### Import the dashboard manually 
 - Open Grafana 
    - Access to grafana:
       ```bash
@@ -190,7 +198,7 @@ kubectl apply -f dashboard/tweet-sentiment-dashboard-configmap.yaml
       
 - Go to Dashboards → Import
 
-- Upload: monitoring/tweet-sentiment-dashboard.json
+- Upload: monitoring/tweet-sentiment-dashboard.json (Not available yet. You need to create view)
 
 - Select Prometheus as data source, click Import
 
