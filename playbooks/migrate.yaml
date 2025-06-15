@@ -1,0 +1,166 @@
+- name: Deploy app with Helm and label nodes
+  hosts: ctrl
+  vars:
+    helm_chart_name: sentiment-app             # matches 'name:' in Chart.yaml
+    helm_chart_path: "/home/vagrant/helm_chart"
+  tasks:
+    - name: Copy kubeconfig
+      shell: sudo cat /etc/kubernetes/admin.conf > /home/vagrant/.kube/config
+      args:
+        creates: /home/vagrant/.kube/config
+
+    - name: Fix permissions
+      file:
+        path: /home/vagrant/.kube/config
+        owner: vagrant
+        group: vagrant
+        mode: "0600"
+
+    - name: Create GHCR secret
+      shell: >
+        kubectl create secret docker-registry ghcr-secret
+        --docker-server=ghcr.io
+        --docker-username={{ github_username }}
+        --docker-password={{ github_pat }}
+        --docker-email={{ github_email }}
+      environment:
+        KUBECONFIG: /home/vagrant/.kube/config
+      register: secret_out
+      failed_when: secret_out.rc not in [0,1]
+
+    - name: Label default namespace for Istio injection
+      shell: kubectl label namespace default istio-injection=enabled --overwrite
+      environment:
+        KUBECONFIG: /home/vagrant/.kube/config
+
+    # - name: Update Helm repos
+    #   become_user: vagrant
+    #   command: helm repo update
+
+    - name: Copy Helm chart to remote VM
+      copy:
+        src: "{{ playbook_dir }}/../helm_chart/"
+        dest: "/home/vagrant/helm_chart/"
+        owner: vagrant
+        group: vagrant
+        mode: "0755"
+
+    - name: List contents of Helm chart on remote
+      command: ls -l /home/vagrant/helm_chart
+      register: chart_ls
+      become_user: vagrant
+
+    - debug:
+        var: chart_ls.stdout_lines
+
+    - name: Check if release exists
+      command: helm status {{ helm_chart_name }} --namespace default
+      register: helm_status
+      failed_when: false
+      changed_when: false
+      environment:
+        KUBECONFIG: /home/vagrant/.kube/config
+
+
+    - name: Check if Prometheus stack is already installed
+      command: helm status prometheus --namespace monitoring
+      register: prometheus_status
+      failed_when: false
+      changed_when: false
+      environment:
+        KUBECONFIG: /home/vagrant/.kube/config
+
+    - name: Add prometheus-community repo (if not exists)
+      command: helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+      when: prometheus_status.rc != 0
+      become_user: vagrant
+      environment:
+        KUBECONFIG: /home/vagrant/.kube/config
+
+    - name: Update helm repos
+      command: helm repo update
+      when: prometheus_status.rc != 0
+      become_user: vagrant
+      environment:
+        KUBECONFIG: /home/vagrant/.kube/config
+
+    - name: Install Prometheus kube-prometheus-stack
+      command: >
+        helm install prometheus prometheus-community/kube-prometheus-stack
+        --namespace monitoring
+        --create-namespace
+        --wait --timeout=300s
+      when: prometheus_status.rc != 0
+      become_user: vagrant
+      environment:
+        KUBECONFIG: /home/vagrant/.kube/config
+
+
+    - name: Label application nodes
+      command: kubectl label node {{ item.name }} node-role={{ item.role }} --overwrite
+      loop:
+        - { name: "k8s-node-1", role: "model" }
+        - { name: "k8s-node-2", role: "app" }
+      environment:
+        KUBECONFIG: /home/vagrant/.kube/config
+
+
+    - name: Install app if not present
+      command: >
+        helm upgrade --install {{ helm_chart_name }} {{ helm_chart_path }}
+        --namespace default
+        --create-namespace
+        --wait --timeout=120s
+        --set image.tag={{ app_image_tag | default('latest') }} 
+      become_user: vagrant
+      environment:
+        KUBECONFIG: /home/vagrant/.kube/config
+ 
+
+    - name: Fetch kubeconfig for local use
+      fetch:
+        src: /home/vagrant/.kube/config
+        dest: ../kubeconfig-vagrant
+        flat: yes
+      become: true
+      become_user: vagrant
+
+    - name: Wait for pods to be ready
+      command: kubectl wait --namespace default --for=condition=Ready pods --all --timeout=120s
+      environment:
+        KUBECONFIG: /home/vagrant/.kube/config
+
+    - name: Display node labels
+      command: kubectl get nodes --show-labels
+      register: nodes_out
+      environment:
+        KUBECONFIG: /home/vagrant/.kube/config
+
+    - debug:
+        var: nodes_out.stdout_lines
+
+    - name: Display pod placement
+      command: kubectl get pods -o wide
+      register: pods_out
+      environment:
+        KUBECONFIG: /home/vagrant/.kube/config
+
+    - debug:
+        var: pods_out.stdout_lines
+
+    - name: Get external IP of ingress gateway
+      shell: |
+        kubectl get svc -n istio-system istio-ingressgateway -o jsonpath='{.status.loadBalancer.ingress[0].ip}'
+      register: ingress_ip
+      environment:
+        KUBECONFIG: /home/vagrant/.kube/config
+
+    - name: Show application access URL
+      debug:
+        msg: "Your app should be available at: http://{{ ingress_ip.stdout }}/"
+
+    - name: Output KUBECONFIG export command
+      delegate_to: localhost
+      run_once: true
+      ansible.builtin.debug:
+        msg: "Run this in your terminal to be able to use kubectl commands: export KUBECONFIG=$(pwd)/kubeconfig-vagrant"
