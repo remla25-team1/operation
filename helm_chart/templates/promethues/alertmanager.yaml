@@ -1,0 +1,32 @@
+{{- if .Values.alertmanager.enabled }}
+apiVersion: v1
+kind: Secret
+metadata:
+  name: {{ .Release.Name }}-alertmanager-config
+  namespace: {{ .Values.alertmanager.namespace }}
+  labels:
+    app: alertmanager
+    release: {{ .Release.Name }}
+type: Opaque
+stringData:
+  alertmanager.yaml: |
+    global:
+      smtp_smarthost: '{{ .Values.alertmanager.smtp_smarthost }}'
+      smtp_from: '{{ .Values.alertmanager.smtp_from }}'
+      smtp_auth_username: "${SMTP_USERNAME}"
+      smtp_auth_password: "${SMTP_PASSWORD}"
+      smtp_require_tls: true
+
+    route:
+      receiver: 'email'
+      group_by: ['alertname']
+      group_wait: 30s
+      group_interval: 5m
+      repeat_interval: 6h
+
+    receivers:
+    - name: 'email'
+      email_configs:
+      - to: '{{ .Values.alertmanager.smtp_to }}'
+        send_resolved: true
+{{- end }}

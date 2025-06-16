@@ -143,8 +143,6 @@ kubectl get pods -o wide
 # model-service-5987884b9-mjjln   1/1     Running   0          46m   10.244.1.7   k8s-node-1   <none>           <none>
 ```
 
-
-
 ## Check if Prometheus works
 
 ### 1. Access Prometheus Web UI
@@ -168,7 +166,59 @@ kubectl port-forward svc/sentiment-app-app 8080:8080
 curl http://localhost:8080/metrics
 ```
 
+## Test Alerting Capabilities 
 
+### 1. Create a Kubernetes Secret for SMTP Credentials
+
+Use the following command to create a secret containing fake (or real, for production) SMTP credentials.
+
+```bash
+kubectl create secret generic alertmanager-smtp-secret \
+  --from-literal=smtp_username=fake-user@example.com \
+  --from-literal=smtp_password=fake-password \
+  -n monitoring
+```
+
+### 2. Re-deploy the Application 
+
+Re-run the deployment to apply changes, including alerting configuration:
+```bash
+./run-all.sh
+```
+This ensures that Alertmanager picks up the config and mounts the secret properly.
+
+### 3. Access Prometheus and Locate the Alert
+
+Forward Prometheus to your local machine:
+```sh
+kubectl port-forward -n monitoring svc/prometheus-kube-prometheus-prometheus 9090:9090
+```
+
+Then open your browser and visit:
+[http://localhost:9090](http://localhost:9090)
+
+Look for the custom alert "HighRequestRate" in the list. If it's correctly configured and active, it will appear as Inactive, Pending or Firing.
+
+### 4. Trigger the Alert by Generating Traffic
+
+To exceed the alert threshold, simulate traffic:
+```bash
+while true; do curl -s http://192.168.56.91:80/; sleep 0.1; done
+```
+This generates approximately 10 requests per second, which is well above the threshold.
+
+### 5. Verify Alert Status
+
+In the Prometheus UI under **Alerts**, verify that the alert transitions from **Pending** to **Firing** after approximately 2m. 
+
+Check the Alertmanager UI to confirm that it received and processed the alert:
+
+```bash
+kubectl port-forward -n monitoring svc/alertmanager-operated 9093
+```
+
+Then visit: [http://localhost:9093](http://localhost:9093).
+You should see the alert listed there.
 
 ## Grafana 
 We provide a pre-configured dashboard for monitoring with 4 pannels:

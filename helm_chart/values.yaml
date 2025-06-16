@@ -232,12 +232,12 @@ virtualServices:
 secret:
   key: "secret" 
 # ─────────────────────────────────────────────────────────────────────────────
-
 prometheus:
   prometheusSpec:
     serviceMonitorSelector: {}
     serviceMonitorNamespaceSelector: {}
-
+    ruleSelector: {}
+    ruleNamespaceSelector: {}
 # ─────────────────────────────────────────────────────────────────────────────
 monitoring:
   enabled: true
@@ -252,3 +252,38 @@ monitoring:
     #   port: web
     #   path: /metrics
     #   interval: 15s
+# ─────────────────────────────────────────────────────────────────────────────
+prometheusRule:
+  enabled: true
+  namespace: monitoring
+  release: prometheus
+
+  groupName: app
+  name: HighRequestRate
+  expr: rate(flask_http_request_total[1m]) > 0.25
+  for: 2m
+  severity: warning
+  summary: "High request rate detected"
+  description: "More than 15 requests per minute for two minutes straight."
+# ─────────────────────────────────────────────────────────────────────────────
+alertmanager:
+  enabled: true
+  namespace: monitoring
+
+  smtp_smarthost: smtp.example.com:587
+  smtp_from: alertmanager@example.com
+  smtp_to: dev-team@example.com 
+
+  alertmanagerSpec:
+    configSecret: alertmanager-config 
+    env:
+      - name: SMTP_USERNAME
+        valueFrom:
+          secretKeyRef:
+            name: alertmanager-smtp-secret
+            key: smtp_username
+      - name: SMTP_PASSWORD
+        valueFrom:
+          secretKeyRef:
+            name: alertmanager-smtp-secret
+            key: smtp_password
