@@ -1,0 +1,62 @@
+# This is an EnvoyFilter that modifies the behavior of Istio’s Ingress Gateway Envoy proxy, 
+# telling it to call an external rate limit service before forwarding a request.
+
+apiVersion: networking.istio.io/v1alpha3
+kind: EnvoyFilter       # EnvoyFilter is an Istio CRD that lets you insert custom filters into the Envoy proxy
+metadata:
+  name: envoy-rate-limit
+  namespace: istio-system
+spec:
+  workloadSelector:
+    labels:
+      istio: ingressgateway
+
+  # Tell Envoy to insert a filter before the router filter.
+  # So requests will go through the rate limit filter before they get routed.
+  configPatches:
+    - applyTo: HTTP_FILTER      
+      match:
+        context: GATEWAY
+        listener:
+          filterChain:
+            filter:
+              name: envoy.filters.network.http_connection_manager
+              subFilter:
+                name: envoy.filters.http.router
+      # Actual rate limit filter.
+      patch:
+        operation: INSERT_BEFORE
+        value:
+          name: envoy.filters.http.ratelimit
+          typed_config:
+            "@type": type.googleapis.com/envoy.extensions.filters.http.ratelimit.v3.RateLimit
+            domain: istio-ratelimit
+            failure_mode_deny: true   # If rate limit service is unreachable, requests will be denied.
+            rate_limit_service:
+              grpc_service:
+                envoy_grpc:
+                  cluster_name: rate_limit_cluster
+                timeout: 0.25s
+
+    #  Add a new gRPC cluster named rate_limit_cluster that connects to the rate limit service running inside the cluster.
+    - applyTo: CLUSTER
+      match:
+        cluster:
+          name: rate_limit_cluster
+      patch:
+        operation: ADD
+        value:
+          name: rate_limit_cluster
+          type: STRICT_DNS
+          connect_timeout: 0.25s
+          http2_protocol_options: {}
+          lb_policy: ROUND_ROBIN
+          load_assignment:
+            cluster_name: rate_limit_cluster
+            endpoints:
+              - lb_endpoints:
+                  - endpoint:
+                      address:
+                        socket_address:
+                          address: ratelimit.istio-system.svc.cluster.local
+                          port_value: 8081

@@ -28,8 +28,72 @@
       register: secret_out
       failed_when: secret_out.rc not in [0,1]
 
+    - name: Ensure istio-system namespace exists
+      command: kubectl get ns istio-system
+      register: istio_ns
+      failed_when: istio_ns.rc != 0
+      changed_when: false
+      environment:
+        KUBECONFIG: /home/vagrant/.kube/config
+
     - name: Label default namespace for Istio injection
       shell: kubectl label namespace default istio-injection=enabled --overwrite
+      environment:
+        KUBECONFIG: /home/vagrant/.kube/config
+
+    - name: Check if rate-limit.yaml already exists on remote
+      stat:
+        path: /home/vagrant/rate-limit.yaml
+      register: rate_limit_file
+
+    - name: Copy rate-limit.yaml to remote if not present
+      copy:
+        src: "{{ playbook_dir }}/rate-limit.yaml"
+        dest: "/home/vagrant/rate-limit.yaml"
+        owner: vagrant
+        group: vagrant
+        mode: "0644"
+      when: not rate_limit_file.stat.exists
+
+    - name: Apply rate limit EnvoyFilter
+      command: kubectl apply -f /home/vagrant/rate-limit.yaml
+      environment:
+        KUBECONFIG: /home/vagrant/.kube/config
+
+    - name: Check if ratelimit deployment already exists
+      command: kubectl get deployment ratelimit -n istio-system
+      register: ratelimit_check
+      failed_when: false
+      changed_when: false
+      environment:
+        KUBECONFIG: /home/vagrant/.kube/config
+
+    - name: Check if deploy-ratelimit.yaml already exists on remote
+      stat:
+        path: /home/vagrant/deploy-ratelimit.yaml
+      register: ratelimit_deploy_file
+
+    - name: Copy deploy-ratelimit.yaml to remote if not present
+      copy:
+        src: "{{ playbook_dir }}/deploy-ratelimit.yaml"
+        dest: /home/vagrant/deploy-ratelimit.yaml
+        owner: vagrant
+        group: vagrant
+        mode: "0644"
+      when: not ratelimit_deploy_file.stat.exists
+
+    - name: Deploy ratelimit and redis services if not already deployed
+      command: kubectl apply -f /home/vagrant/deploy-ratelimit.yaml
+      when: ratelimit_check.rc != 0
+      environment:
+        KUBECONFIG: /home/vagrant/.kube/config
+
+    - name: Wait for ratelimit pods to become ready
+      shell: kubectl rollout status deployment/ratelimit -n istio-system
+      retries: 5
+      delay: 5
+      register: rollout_result
+      until: rollout_result.rc == 0
       environment:
         KUBECONFIG: /home/vagrant/.kube/config
 
