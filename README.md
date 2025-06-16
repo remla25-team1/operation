@@ -207,7 +207,7 @@ while true; do curl -s http://192.168.56.91:80/; sleep 0.1; done
 ```
 This generates approximately 10 requests per second, which is well above the threshold.
 
-### 5. Verify Alert Status and Email Notification
+### 5. Verify Alert Status
 
 In the Prometheus UI under **Alerts**, verify that the alert transitions from **Pending** to **Firing** after approximately 2m. 
 
@@ -217,8 +217,8 @@ Check the Alertmanager UI to confirm that it received and processed the alert:
 kubectl port-forward -n monitoring svc/alertmanager-operated 9093
 ```
 
-Then visit: [http://localhost:9093](http://localhost:9093)
-You should see the alert listed there, with the configured receiver (email, etc.).
+Then visit: [http://localhost:9093](http://localhost:9093).
+You should see the alert listed there.
 
 ## Grafana 
 We provide a pre-configured dashboard for monitoring with 4 pannels:

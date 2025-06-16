@@ -270,9 +270,9 @@ alertmanager:
   enabled: true
   namespace: monitoring
 
-  smtp_smarthost: smtp.fakehost.test:587
-  smtp_from: alert@example.com
-  smtp_to: test@example.com
+  smtp_smarthost: smtp.example.com:587
+  smtp_from: alertmanager@example.com
+  smtp_to: dev-team@example.com 
 
   alertmanagerSpec:
     configSecret: alertmanager-config 
