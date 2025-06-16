@@ -184,9 +184,9 @@ Created PR:
 Approved PR: 
 
 ### -- Sofia: --
-Created PR: 
+Created PR: https://github.com/remla25-team1/operation/pull/19 (related to A3)
 
-Approved PR: 
+Approved PR: https://github.com/remla25-team1/operation/pull/18 (related to A3 and A5)
 
 ### -- Vivian: --
 Created PR: https://github.com/remla25-team1/model-training/pull/12 (related to A4)
