@@ -9,3 +9,4 @@ metadata:
 data:
   tweet-sentiment-dashboard.json: |
 {{ .Files.Get "dashboards/tweet-sentiment-dashboard.json" | indent 4 }}
+

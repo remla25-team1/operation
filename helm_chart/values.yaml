@@ -287,3 +287,14 @@ alertmanager:
           secretKeyRef:
             name: alertmanager-smtp-secret
             key: smtp_password
+# ─────────────────────────────────────────────────────────────────────────────
+grafana:
+  enabled: true
+  sidecar:
+    dashboards:
+      enabled: true
+      searchNamespace: ALL
+      label: grafana_dashboard
+      labelValue: "1"
+
+
