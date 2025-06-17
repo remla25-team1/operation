@@ -84,9 +84,9 @@
       environment:
         KUBECONFIG: /home/vagrant/.kube/config
 
-    - name: Install Prometheus kube-prometheus-stack
+    - name: Install/Upgrade Prometheus kube-prometheus-stack
       command: >
-        helm install prometheus prometheus-community/kube-prometheus-stack
+        helm upgrade --install prometheus prometheus-community/kube-prometheus-stack
         --namespace monitoring
         --create-namespace
         --wait --timeout=300s
