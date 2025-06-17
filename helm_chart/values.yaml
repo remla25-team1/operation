@@ -288,7 +288,7 @@ alertmanager:
             name: alertmanager-smtp-secret
             key: smtp_password
 # ─────────────────────────────────────────────────────────────────────────────
-ratelimit:
+rateLimit:
   name: rate-limit
   namespace: istio-system
   selector:
