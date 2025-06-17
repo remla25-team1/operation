@@ -41,6 +41,11 @@ spec:
                 default_value:
                   numerator: 100
                   denominator: HUNDRED
+              response_headers_to_add:
+                - append: false
+                  header:
+                    key: x-local-rate-limit
+                    value: 'true'
               local_reply_config:
                 status_code: 429
 

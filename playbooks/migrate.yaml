@@ -56,26 +56,28 @@
       when: not rate_limit_file.stat.exists
 
     - name: Apply the local rate limiting EnvoyFilter
-      kubernetes.core.k8s:
-        state: present
-        namespace: istio-system
-        definition: "{{ lookup('file', 'rate-limit.yaml') | from_yaml }}"
-        kubeconfig: /home/vagrant/.kube/config
+      ansible.builtin.command: kubectl apply -f rate-limit.yaml --kubeconfig=/home/vagrant/.kube/config
+
 
     - name: Wait for Envoy to reload with new config
       pause:
-        seconds: 10
+        seconds: 30
 
     - name: Check that local rate limit EnvoyFilter is applied
       shell: kubectl get envoyfilters -n istio-system rate-limit
-      register: rate_limit_filter_check
-      failed_when: "'NotFound' in rate_limit_filter_check.stdout"
+      register: rate_limit_check
+      failed_when: "'NotFound' in rate_limit_check.stdout"
       changed_when: false
+      environment:
+        KUBECONFIG: /home/vagrant/.kube/config
+
+    - name: Print everything in rate_limit_check
+      debug:
+        var: rate_limit_check
 
     - name: Debug EnvoyFilter presence
       debug:
-        msg: "{{ rate_limit_filter_check.stdout }}"
-
+        msg: "{{ rate_limit_check.stdout }}"
 
     # - name: Update Helm repos
     #   become_user: vagrant
