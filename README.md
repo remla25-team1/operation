@@ -15,7 +15,6 @@ Each component can be developed, tested, and deployed independently, yet they fo
 
 - [Install & Run](#install--run)
 - [SSH Key Setup](#ssh-key-setup)
-- [Clone the Repository](#clone-the-repository)
 - [Running Application on Kubernetes Cluster](#running-application-on-kubernetes-cluster)
 - [Other Commands](#other-commands)
 - [Other Useful Stuff](#other-useful-stuff)
@@ -25,6 +24,7 @@ Each component can be developed, tested, and deployed independently, yet they fo
   - [Auto-load via ConfigMap](#auto-load-via-configmap)
   - [Import the Dashboard Manually](#import-the-dashboard-manually)
 - [Testing Istio](#testing-istio)
+- [Local Development](#local-development)
 
 ## Install & Run
 
@@ -57,19 +57,6 @@ or at the custom path you provided.
 ```bash
 cp ~/.ssh/id_rsa.pub ssh_keys/id_rsa.pub
 ```
-
-## Clone the Repository
-
-Clone the **operation** repository from GitHub (e.g., using SSH):
-
-   ```bash
-   git clone git@github.com:remla25-team1/operation.git
-   cd operation
-   ```
-  
-TODO: all repos needs to be cloned
-
-## 
 
 ## Running Application on Kubernetes Cluster
 
@@ -348,4 +335,38 @@ python scripts/peer-release.py
 
 **operation**: Provides a simple Dockerfile setup along with clear documentation for running the entire system locally.
 
----
+## Local Development
+
+### 1. Clone All Repositories
+
+You can clone all required repositories for local development with the provided script:
+```bash
+chmod +x clone-all.sh
+./clone-all.sh
+```
+
+After cloning, switch to the **operation** repository:
+```bash
+cd operation
+```
+
+Make sure you have SSH access to all repositories (see SSH key setup in ...)
+
+### 2. Run the Application with Docker Compose
+
+From the root of the `operation` repository, build and start all services:
+```bash
+docker compose up --build
+# or
+docker-compose up --build
+```
+
+### 3. Stop and Clean Up
+To stop and remove the containers and associated resources, run the following command:
+```bash
+docker compose down
+# or
+docker-compose down
+```
+
+
