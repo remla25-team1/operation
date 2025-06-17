@@ -41,44 +41,6 @@
       environment:
         KUBECONFIG: /home/vagrant/.kube/config
 
-    - name: Check if rate-limit.yaml already exists on remote
-      stat:
-        path: /home/vagrant/rate-limit.yaml
-      register: rate_limit_file
-
-    - name: Copy rate-limit.yaml to remote if not present
-      copy:
-        src: "{{ playbook_dir }}/rate-limit.yaml"
-        dest: "/home/vagrant/rate-limit.yaml"
-        owner: vagrant
-        group: vagrant
-        mode: "0644"
-      when: not rate_limit_file.stat.exists
-
-    - name: Apply the local rate limiting EnvoyFilter
-      ansible.builtin.command: kubectl apply -f rate-limit.yaml --kubeconfig=/home/vagrant/.kube/config
-
-
-    - name: Wait for Envoy to reload with new config
-      pause:
-        seconds: 30
-
-    - name: Check that local rate limit EnvoyFilter is applied
-      shell: kubectl get envoyfilters -n istio-system rate-limit
-      register: rate_limit_check
-      failed_when: "'NotFound' in rate_limit_check.stdout"
-      changed_when: false
-      environment:
-        KUBECONFIG: /home/vagrant/.kube/config
-
-    - name: Print everything in rate_limit_check
-      debug:
-        var: rate_limit_check
-
-    - name: Debug EnvoyFilter presence
-      debug:
-        msg: "{{ rate_limit_check.stdout }}"
-
     # - name: Update Helm repos
     #   become_user: vagrant
     #   command: helm repo update

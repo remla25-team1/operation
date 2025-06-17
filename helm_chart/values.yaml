@@ -287,3 +287,26 @@ alertmanager:
           secretKeyRef:
             name: alertmanager-smtp-secret
             key: smtp_password
+# ─────────────────────────────────────────────────────────────────────────────
+ratelimit:
+  name: rate-limit
+  namespace: istio-system
+  selector:
+    istio: ingressgateway
+    portNumber: 80
+  statPrefix: http_local_rate_limiter
+  maxTokens: 10
+  tokensPerFill: 10
+  fillInterval: 60s
+
+  runtimeKeys:
+    enabled: local_rate_limit_enabled
+    enforced: local_rate_limit_enforced
+
+  defaultValue:
+    numerator: 100
+    denominator: HUNDRED
+
+  responseHeader:
+    key: x-local-rate-limit
+    value: "true"
