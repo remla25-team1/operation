@@ -154,3 +154,90 @@ https://github.com/remla25-team1/operation/pull/14 (related to A5)
 Created PR:
 
 Approved PR: 
+
+# Week 7
+### -- Anna: --
+Created PR: 
+
+Approved PR: 
+
+### -- Sofia: --
+Created PR: 
+
+Approved PR: 
+
+### -- Vivian: --
+Created PR: 
+
+Approved PR: 
+
+### -- Yifan: --
+Created PR: 
+
+Approved PR: 
+
+
+# Week 8
+### -- Anna: --
+Created PR: 
+
+Approved PR: 
+
+### -- Sofia: --
+Created PR: https://github.com/remla25-team1/operation/pull/19 (related to A3)
+
+Approved PR: https://github.com/remla25-team1/operation/pull/18 (related to A3 and A5)
+
+### -- Vivian: --
+Created PR: https://github.com/remla25-team1/model-training/pull/12 (related to A4)
+
+Approved PR: 
+
+### -- Yifan: --
+Created PR: 
+
+Approved PR: 
+
+# Week 9
+### -- Anna: --
+Created PR: 
+
+Approved PR: 
+
+### -- Sofia: --
+Created PR: 
+
+Approved PR: 
+
+### -- Vivian: --
+Created PR: https://github.com/remla25-team1/operation/pull/20 (related to A5)
+
+Created PR: https://github.com/remla25-team1/model-training/pull/13 (related to A4)
+
+Approved PR: 
+
+### -- Yifan: --
+Created PR: 
+
+Approved PR: 
+
+# Week 10
+### -- Anna: --
+Created PR: 
+
+Approved PR: 
+
+### -- Sofia: --
+Created PR: 
+
+Approved PR: 
+
+### -- Vivian: --
+Created PR: 
+
+Approved PR: 
+
+### -- Yifan: --
+Created PR: 
+
+Approved PR: 

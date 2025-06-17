@@ -1,34 +1,289 @@
+# ─────────────────────────────────────────────────────────────────────────────
+config:
+  # App config
+  appVersion:       "latest"
+  modelServiceVersion: "latest"
+  port:             "8080"
+
+  # Model-service config
+  modelServiceHost: "model-service"
+  modelServicePort: "8081"
+
+  # Listener
+  host:             "0.0.0.0"
+# ─────────────────────────────────────────────────────────────────────────────
 app:
-  image: ghcr.io/remla25-team1/app
-  version: 0.0.7-pre09
-  containerPort: 8080
-  servicePort: 8080
-  env:
-    APP_VERSION: latest
-    MODEL_SERVICE_VERSION: latest
-    MODEL_SERVICE_PORT: 8081
-    PORT: 8080
+  # Service configuration
+  service:
+    # Type of Kubernetes Service (ClusterIP, NodePort, LoadBalancer, etc.)
+    type: ClusterIP
+    
+    # Named port used by the Service
+    name: web
 
-model:
-  image: ghcr.io/remla25-team1/model-service
-  version: latest
-  containerPort: 8080
-  servicePort: 8081
-  env:
-    PORT: 8080
-    HOST: "0.0.0.0"
+    # Port the Service exposes
+    port: 8080
 
+    # Pod port the Service forwards to
+    targetPort: 8080
+
+  # Shared Deployment configuration
+  # ImagePullSecret for private registries
+  imagePullSecret: ghcr-secret
+
+  # Docker image (repository only; tag per-version below)
+  image:
+    repository: ghcr.io/remla25-team1/app
+
+  # ConfigMap to load into the Pod
+  configMapName: application-config
+  # ─────────────────────────────────────────────────────────────────────────────
+  # Version-specific settings
+  v1:
+    # Number of replicas for v1
+    replicaCount: 1
+
+    # Image tag for v1
+    image:
+      tag: "0.0.6-pre-20250528-002" # change this to latest?
+
+    # NodeSelector constraints for v1
+    nodeSelector:
+      role: app
+      hostname: k8s-node-2
+
+    # Volume mounts for v1
+    mounts:
+      data: /app/data
+      shared: /mnt/shared
+  # ─────────────────────────────────────────────────────────────────────────────
+  v2: 
+      # Number of replicas for v1
+    replicaCount: 1
+
+    # Image tag for v2
+    image:
+      tag: "0.0.6-pre-20250602-001" # change this to latest?
+
+    # NodeSelector constraints for v2
+    nodeSelector:
+      role: app
+      hostname: k8s-node-2
+
+    # Volume mounts for v1
+    mounts:
+      data: /app/data
+      shared: /mnt/shared
+# ─────────────────────────────────────────────────────────────────────────────
+modelService:
+  service:
+    # Protocol for the service port (TCP, UDP, etc.)
+    protocol: TCP
+
+    # Port the Service exposes
+    port: 8081
+
+    # Port on the pod the Service forwards to
+    targetPort: 8080
+
+  # number of replicas
+  replicaCount: 1
+
+  # pull secret for private registry (if needed)
+  imagePullSecret: ghcr-secret
+
+  # image repository and tag
+  image:
+    repository: ghcr.io/remla25-team1/model-service
+    tag: latest
+
+  # which host to mount the shared volume on
+  nodeSelector:
+    role: model
+    hostname: k8s-node-1
+
+  # container port inside the pod
+  containerPort: 8080
+
+  # name of the ConfigMap to load
+  configMapName: application-config
+
+  # volume mount paths
+  mounts:
+    appData: /app/data
+    sharedData: /mnt/shared
+# ─────────────────────────────────────────────────────────────────────────────
+destinationRules:
+  app:
+    host: app
+    subsets:
+      - name: v1
+        version: v1
+      - name: v2
+        version: v2
+
+  modelService:
+    host: model-service
+    subsets:
+      - name: v1
+        version: v1
+      - name: v2
+        version: v2
+# ─────────────────────────────────────────────────────────────────────────────
+gateway:
+  # Name suffix for the resource (will become <Release-Name>-gatewayName)
+  name: gateway
+
+  # Selector labels for the Istio ingress gateway Service
+  selector:
+    istio: ingressgateway
+
+  # One or more servers to expose
+  servers:
+    - port:
+        number: 80
+        name: http
+        protocol: HTTP
+      hosts:
+        - "*"
+# ─────────────────────────────────────────────────────────────────────────────
 ingress:
   enabled: true
-  className: nginx
-  path: /
 
+  # The ingressClass to use (must match your cluster’s NGINX IngressClass)
+  className: nginx
+
+  # Any annotations you need
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: "/"
+
+  # One or more host rules
+  hosts:
+    - host: app.local
+      paths:
+        - path: /
+          pathType: Prefix
+          # Must match your Service port
+          servicePort: 8080
+# ─────────────────────────────────────────────────────────────────────────────
+redis:
+  # Number of Redis replicas
+  replicaCount: 1
+
+  # Redis image settings
+  image:
+    repository: redis
+    tag: "7"
+
+  # Service settings for Redis
+  service:
+    protocol: TCP
+    port: 6379
+    targetPort: 6379
+# ─────────────────────────────────────────────────────────────────────────────
+virtualServices:
+  app:
+    hosts: ["*"]
+    # Use the Gateway resource from your chart (releaseName + "-gateway")
+    gatewayReleaseNameSuffix: gateway
+    serviceHostNameSuffix: app  
+
+    http:
+      # 1) “Canary” header forces v2 of app
+      - match:
+        - headers:
+            user-group:
+              exact: canary
+        route:
+          - host: ""
+            subset: v2
+
+      # 2) All other app-traffic: 90% v1, 10% v2
+      - route:
+          - host: ""
+            subset: v1
+            weight: 90
+          - host: ""
+            subset: v2
+            weight: 10
+
+  modelService:
+    hosts: ["*"]
+    gatewayReleaseNameSuffix: gateway
+    serviceHostNameSuffix: model-service  
+
+    http:
+      - match:
+        - headers:
+            user-group:
+              exact: "canary"
+        route:
+          - host: ""
+            subset: v2
+    # Weighted split for all other model-service calls
+      - route:
+          - host: ""
+            subset: v1
+            weight: 90
+          - host: ""
+            subset: v2
+            weight: 10
+# ─────────────────────────────────────────────────────────────────────────────
 secret:
   key: "secret" 
-
+# ─────────────────────────────────────────────────────────────────────────────
+prometheus:
+  prometheusSpec:
+    serviceMonitorSelector: {}
+    serviceMonitorNamespaceSelector: {}
+    ruleSelector: {}
+    ruleNamespaceSelector: {}
+# ─────────────────────────────────────────────────────────────────────────────
 monitoring:
   enabled: true
-  
-  release: prometheus  
+  namespace: monitoring
+  release: prometheus
+  targets:
+    - name: app
+      port: web
+      path: /metrics
+      interval: 15s
+    # - name: v2
+    #   port: web
+    #   path: /metrics
+    #   interval: 15s
+# ─────────────────────────────────────────────────────────────────────────────
+prometheusRule:
+  enabled: true
+  namespace: monitoring
+  release: prometheus
 
-sharedVolumePath: /mnt/shared
+  groupName: app
+  name: HighRequestRate
+  expr: rate(flask_http_request_total[1m]) > 0.25
+  for: 2m
+  severity: warning
+  summary: "High request rate detected"
+  description: "More than 15 requests per minute for two minutes straight."
+# ─────────────────────────────────────────────────────────────────────────────
+alertmanager:
+  enabled: true
+  namespace: monitoring
+
+  smtp_smarthost: smtp.example.com:587
+  smtp_from: alertmanager@example.com
+  smtp_to: dev-team@example.com 
+
+  alertmanagerSpec:
+    configSecret: alertmanager-config 
+    env:
+      - name: SMTP_USERNAME
+        valueFrom:
+          secretKeyRef:
+            name: alertmanager-smtp-secret
+            key: smtp_username
+      - name: SMTP_PASSWORD
+        valueFrom:
+          secretKeyRef:
+            name: alertmanager-smtp-secret
+            key: smtp_password
