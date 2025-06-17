@@ -28,8 +28,8 @@ spec:
             value:
               stat_prefix: http_local_rate_limiter
               token_bucket:
-                max_tokens: 200
-                tokens_per_fill: 200
+                max_tokens: 10
+                tokens_per_fill: 10
                 fill_interval: 60s
               filter_enabled:
                 runtime_key: local_rate_limit_enabled
@@ -48,4 +48,9 @@ spec:
                     value: 'true'
               local_reply_config:
                 status_code: 429
+              descriptors:
+                - entries:
+                    - key: remote_address
+                      value: "%DOWNSTREAM_REMOTE_ADDRESS_WITHOUT_PORT%"
+
 
