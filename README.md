@@ -1,4 +1,5 @@
 # REMLA-25, Team 1, Operation
+
 This repository contains a modular tweet sentiment analysis system, organized into six individual repositories under the `remla25-team1` organization:
 
 * **app**: Front-end application and API gateway responsible for serving pages and forwarding model inference requests.
@@ -13,6 +14,7 @@ Each component can be developed, tested, and deployed independently, yet they fo
 ## Contents
 
 - [Install & Run](#install--run)
+- [SSH Key Setup](#ssh-key-setup)
 - [Clone the Repository](#clone-the-repository)
 - [Running Application on Kubernetes Cluster](#running-application-on-kubernetes-cluster)
 - [Other Commands](#other-commands)
@@ -33,6 +35,28 @@ Make sure you have the following installed:
 - [Kubectl](https://kubernetes.io/docs/tasks/tools/)
 - [Helm](https://helm.sh/docs/intro/install/)
 
+## SSH Key Setup
+
+To securely access services or systems in this project, you need to provide your **public SSH key**. Please follow the steps below to generate your key and add it to the correct location.
+
+### 1. Generate a new SSH key pair (if you don’t already have one):
+```bash
+ssh-keygen -t rsa -b 4096 -C "your_email@example.com"
+```
+- When prompted for a file path, you can press `Enter` to accept the default (`~/.ssh/id_rsa`), or specify a custom name.
+- You can also set a passphrase (recommended for security), or leave it blank.
+
+### 2. Locate your public key:
+Your public key will typically be located at:
+```bash
+~/.ssh/id_rsa.pub
+```
+or at the custom path you provided.
+
+### 3. Copy your `.pub` file into the `ssh_keys/` folder of this repository:
+```bash
+cp ~/.ssh/id_rsa.pub ssh_keys/id_rsa.pub
+```
 
 ## Clone the Repository
 
@@ -42,8 +66,13 @@ Clone the **operation** repository from GitHub (e.g., using SSH):
    git clone git@github.com:remla25-team1/operation.git
    cd operation
    ```
+  
+TODO: all repos needs to be cloned
+
+## 
 
 ## Running Application on Kubernetes Cluster
+
 Navigate into ```operation``` dir and run the code below. Set up a ```imagePullSecrets``` for GHCR: first generate a new token (classic) on Github. Give it scopes ```read:packages, repo```. Copy the token and paste it in the command below:
 
 ```bash
