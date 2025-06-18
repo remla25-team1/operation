@@ -28,6 +28,14 @@
       register: secret_out
       failed_when: secret_out.rc not in [0,1]
 
+    - name: Ensure istio-system namespace exists
+      command: kubectl get ns istio-system
+      register: istio_ns
+      failed_when: istio_ns.rc != 0
+      changed_when: false
+      environment:
+        KUBECONFIG: /home/vagrant/.kube/config
+
     - name: Label default namespace for Istio injection
       shell: kubectl label namespace default istio-injection=enabled --overwrite
       environment:
