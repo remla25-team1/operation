@@ -38,7 +38,15 @@ else
 fi
 
 # ──────────────────────────────────────────────────────────────────────────────
-echo "✓ Cleanup complete."
+# Remove state file
+if [[ -f ".run.sh.state" ]]; then
+  echo "-> Removing state file: .run.sh.state"
+  rm -f .run.sh.state
+else
+  echo "-> No state file found. Nothing to remove."
+fi
+# ──────────────────────────────────────────────────────────────────────────────
+echo "✅ Cleanup complete."
 
 # Exit or return depending on context
 if [[ $sourced -eq 1 ]]; then
