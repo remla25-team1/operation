@@ -86,15 +86,14 @@ cp ~/.ssh/id_rsa.pub ssh_keys/id_rsa.pub
 
 ## Running Application on Kubernetes Cluster
 
-Navigate into ```operation``` dir and run the code below. Set up a ```imagePullSecrets``` for GHCR: first generate a new token (classic) on Github. Give it scopes ```read:packages, repo```. Copy the token and paste it in the command below:
-
+Navigate into ```operation``` dir and run the commands below. 
 ```bash
 chmod +x run-all.sh
 ./run-all.sh
 ```
 
-This will set up all services. The script takes a good while to run, so take your time. During step 3 of the process (indicated in the terminal), you will be asked for your Github username, PAT token, and Github email address. This is so that you can pull the latest images to deploy on the cluster.
-You will be asked for your ```BECOME``` password. This is so that the playbook can run commands in ```sudo``` mode. Simply fill in your host password here.
+
+This will set up all services. The script takes a good while to run, so take your time. During step 3 of the process (indicated in the terminal), you will be asked for your Github username, PAT token, and Github email address. This is so that you can pull the latest images to deploy on the cluster. Set up a `imagePullSecrets` for GHCR: first generate a new token (classic) on Github. Give it scopes `read:packages, repo`. Copy the token and paste it in the PAT token space. You will be asked for your `BECOME` password. This is so that the playbook can run commands in `sudo` mode. Simply fill in your host password here.
 
 At the end of the script, you will be asked to execute the following command, so that you can execute ```kubectl``` commands in the terminal:
 ```bash
