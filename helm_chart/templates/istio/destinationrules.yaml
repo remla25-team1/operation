@@ -14,7 +14,7 @@ spec:
     {{- range $dr.subsets }}
     - name: {{ .name }}
       labels:
-        version: {{ .version }}
+        version: {{ tpl .version $ }}
     {{- end }}
 ---
 {{- end }}

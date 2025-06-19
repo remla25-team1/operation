@@ -68,7 +68,8 @@ Approved PR: https://github.com/remla25-team1/app/pull/8 (related to A1)
 # Week 4:
 
 ### -- Anna: --
-Created PR: https://github.com/remla25-team1/operation/pull/9 (fixes after setting up the cluster in the below PR)
+Created PR: https://github.com/remla25-team1/operation/pull/9 (related to A3, fixes after setting up the cluster in the below PR)
+ https://github.com/remla25-team1/operation/pull/8 (related to A3)
 
 Approved PR: https://github.com/remla25-team1/operation/pull/8 (related to A3)
 - That I also co-authored in case that is important for the knock-out criteria
@@ -214,7 +215,9 @@ Created PR: https://github.com/remla25-team1/operation/pull/20 (related to A5)
 
 Created PR: https://github.com/remla25-team1/model-training/pull/13 (related to A4)
 
-Approved PR: 
+Created PR: https://github.com/remla25-team1/operation/pull/22 (related to A3)
+
+Approved PR: https://github.com/remla25-team1/operation/pull/21 (related to A5)
 
 ### -- Yifan: --
 Created PR: 
