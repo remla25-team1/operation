@@ -206,9 +206,9 @@ Created PR:
 Approved PR: 
 
 ### -- Sofia: --
-Created PR: 
+Created PR: https://github.com/remla25-team1/operation/pull/25 (related to A5)
 
-Approved PR: 
+Approved PR: https://github.com/remla25-team1/operation/pull/22 (related to A3)
 
 ### -- Vivian: --
 Created PR: https://github.com/remla25-team1/operation/pull/20 (related to A5)
