@@ -63,7 +63,7 @@ sequenceDiagram
     participant Grafana
     participant Alertmanager
 
-    User->>Ingress: GET /predict?tweet="I love cats!"
+    User->>Ingress: POST /sentiment {"tweet": "I love this project!"}
     Ingress->>AppService: Route to app service
     AppService->>AppPod: Forward to pod
 
@@ -90,7 +90,7 @@ sequenceDiagram
     end
 ```
 
-1. **User Request:** A user accesses the app via `GET /predict?tweet=...`.
+1. **User Request:** A user accesses the app via `POST /sentiment {"tweet": "I love this project!"}`.
 2. **Routing via Ingress:** The Istio IngressGateway routes the request to the appropriate frontend service.
 3. **Frontend Processing:**
     - The service logs the request and exposes metrics.
@@ -117,18 +117,16 @@ graph TD
   B --> C{{VirtualService}}
   C -->|90%| D[App v1]
   C -->|10%| E[App v2]
-  D --> F[Model v1]
-  E --> G[Model v2]
+  D --> F[Model]
+  E --> F
   class B,C istio;
-  class D,E,F,G k8s;
+  class D,E,F k8s;
 ```
 
-- We deploy multiple versions of our frontend and backend services simultaneously:
-  - Frontend: `app-service-v1`, `app-service-v2`
-  - Backend: `model-service-v1`, `model-service-v2`
+- We deploy multiple versions of our frontend simultaneously:
+  - Frontend: `v1` and `v2`
 - The VirtualService (or Ingress rules) direct traffic dynamically with weights. We use the following split:
-  - 90% traffic to `app-service-v1`, 10% to `app-service-v2` (frontend)
-  - Similarly for backend services.
+  - 90% traffic to `v1`, 10% to `v2` (frontend)
 - This routing enables canary releases and continuous experimentation by gradually shifting traffic.
 - Currently we manually update the weights.
 
