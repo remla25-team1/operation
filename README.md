@@ -58,6 +58,7 @@ Before getting started, ensure the following tools are installed on your system:
 - [Ansible](https://docs.ansible.com/ansible/latest/installation_guide/index.html)
 - [Kubectl](https://kubernetes.io/docs/tasks/tools/)
 - [Helm](https://helm.sh/docs/intro/install/)
+- [yq: command-line YAML processor safer than awk, sed, and grep](https://github.com/mikefarah/yq)
 
 ### 2. SSH Key Setup
 
