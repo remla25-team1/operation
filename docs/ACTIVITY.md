@@ -215,7 +215,7 @@ Created PR: https://github.com/remla25-team1/operation/pull/20 (related to A5)
 
 Created PR: https://github.com/remla25-team1/model-training/pull/13 (related to A4)
 
-Approved PR: 
+Approved PR: https://github.com/remla25-team1/operation/pull/21 (related to A5)
 
 ### -- Yifan: --
 Created PR: 
