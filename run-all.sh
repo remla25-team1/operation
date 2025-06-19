@@ -6,14 +6,14 @@ STATE_FILE=".run.sh.state"
 
 # ──────────────────────────────────────────────────────────────────────────────
 step1_vagrant_up() {
-  echo "→ [Step 1] vagrant up"
+  echo "-> [Step 1] vagrant up"
   vagrant up
   echo 2 > "$STATE_FILE"
   echo "Sleeping ${SLEEP_TIME}s…"; sleep "$SLEEP_TIME"
 }
 
 step2_finalize() {
-  echo "→ [Step 2] ansible-playbook finalization.yaml"
+  echo "-> [Step 2] ansible-playbook finalization.yaml"
   ansible-playbook \
     -u vagrant \
     -i 192.168.56.100, \
@@ -24,13 +24,13 @@ step2_finalize() {
 }
 
 step3_migrate() {
-  echo "→ [Step 3] prompt for GitHub credentials"
+  echo "-> [Step 3] prompt for GitHub credentials"
   read -p "GitHub username: " GITHUB_USERNAME
   read -s -p "GitHub Personal Access Token: " GITHUB_PAT
   echo
   read -p "GitHub email: " GITHUB_EMAIL
 
-  echo "→ [Step 4] ansible-playbook migrate.yaml"
+  echo "-> [Step 4] ansible-playbook migrate.yaml"
   ansible-playbook \
     -i shared/inventory.ini playbooks/migrate.yaml \
     --ask-become-pass \
@@ -42,15 +42,18 @@ step3_migrate() {
 }
 
 step4_export_kubeconfig() {
-  echo "→ [Step 5] Final instructions for using kubectl"
+  echo "-> [Step 5] Final instructions for using kubectl"
   echo
-  echo "⚠️  Note: To use kubectl with your cluster, run the following command in your terminal:"
+  echo "⚠️ Note: To use kubectl with your cluster, run the following command in your terminal:"
   echo
   echo " export KUBECONFIG=\"\$(pwd)/kubeconfig-vagrant\""
   echo
   echo "This step cannot be applied permanently from inside the script."
   echo
-  echo "✓ Script completed successfully."
+  echo "You can find the app frontend at:"
+  echo " http://http://192.168.56.91"
+  echo
+  echo "✅ Script completed successfully."
   rm -f "$STATE_FILE"
 }
 

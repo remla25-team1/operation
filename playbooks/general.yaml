@@ -128,19 +128,27 @@
               sysctl_set: yes
               reload: yes
 
-    - name: Update /etc/hosts with cluster entries
-      blockinfile:
-        path: /etc/hosts
-        block: |
-          # Kubernetes cluster hosts (Ansible managed)
-          {{ ctrl_ip }} k8s-ctrl
-          {% for i in range(1, worker_count + 1) %}
-          {{ cluster_network }}.{{ 100 + i }} k8s-node-{{ i }}
-          {% endfor %}
-        marker: "# {mark} K8S CLUSTER ENTRIES - ANSIBLE MANAGED"
-        insertafter: "^127.0.0.1"
-        backup: yes
-      when: ctrl_ip is defined and worker_count is defined and cluster_network is defined
+    # - name: Update /etc/hosts with cluster entries
+    #   blockinfile:
+    #     path: /etc/hosts
+    #     block: |
+    #       # Kubernetes cluster hosts (Ansible managed)
+    #       {{ ctrl_ip }} k8s-ctrl
+    #       {% for i in range(1, worker_count + 1) %}
+    #       {{ cluster_network }}.{{ 100 + i }} k8s-node-{{ i }}
+    #       {% endfor %}
+    #     marker: "# {mark} K8S CLUSTER ENTRIES - ANSIBLE MANAGED"
+    #     insertafter: "^127.0.0.1"
+    #     backup: yes
+    #   when: ctrl_ip is defined and worker_count is defined and cluster_network is defined
+
+    - name: Deploy /etc/hosts file
+      ansible.builtin.template:
+        src: ../templates/hosts.j2
+        dest: /etc/hosts
+        owner: root
+        group: root
+        mode: "0644"
 
     # step 9
     - name: Add Kubernetes GPG key

@@ -1,6 +1,8 @@
+# Kubernetes cluster hosts (Ansible managed)
 127.0.0.1   localhost
-{{ ctrl_ip }}   k8s-ctrl
+
+{{ ctrl_ip }} k8s-ctrl
 
 {% for i in range(1, worker_count + 1) %}
-{{ cluster_network }}.{{ 100 + i }}   k8s-node-{{ i }}
+{{ cluster_network }}.{{ 100 + i }} k8s-node-{{ i }}
 {% endfor %}
