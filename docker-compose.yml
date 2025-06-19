@@ -15,7 +15,6 @@ services:
       - PORT=${CONTAINER_PORT}
     restart: always
     volumes:
-      - ./app_data:/app/data
       - ./secrets/dummy_secret.txt:/run/secrets/dummy_secret:ro
     networks:
       - app-network
