@@ -1,10 +1,8 @@
 # ─────────────────────────────────────────────────────────────────────────────
 config:
   # App config
-  appVersion: "0.0.6-pre-20250617-001"
-  # # Logical version values (set via --set or CI)
-  # appVersionV1: "v0.0.6-pre-20250616-001"
-  # appVersionV2: "v0.0.6-pre-20250616-002"
+  appVersionV1: "0.0.6-pre-20250617-001"
+  appVersionV2: "0.0.6-pre-20250617-003"
   modelServiceVersion: "latest"
   port:             "8080"
 
@@ -38,8 +36,6 @@ app:
   image:
     repository: ghcr.io/remla25-team1/app
 
-  # ConfigMap to load into the Pod
-  configMapName: application-config
   # ─────────────────────────────────────────────────────────────────────────────
   # Version-specific settings
   v1:
@@ -55,6 +51,9 @@ app:
       role: app
       hostname: k8s-node-2
 
+    # ConfigMap to load into the Pod
+    configMapName: application-config-v1 
+
     # Volume mounts for v1
     mounts:
       data: /app/data
@@ -64,14 +63,18 @@ app:
       # Number of replicas for v1
     replicaCount: 1
 
+
     # Image tag for v2
     image:
-      tag: "0.0.6-pre-20250617-002" # change this to latest?
+      tag: "0.0.6-pre-20250617-003" # change this to latest?
 
     # NodeSelector constraints for v2
     nodeSelector:
       role: app
       hostname: k8s-node-2
+
+    # ConfigMap to load into the Pod
+    configMapName: application-config-v2
 
     # Volume mounts for v1
     mounts:
@@ -109,7 +112,7 @@ modelService:
   containerPort: 8080
 
   # name of the ConfigMap to load
-  configMapName: application-config
+  configMapName: application-config-model-service
 
   # volume mount paths
   mounts:

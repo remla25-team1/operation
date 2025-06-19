@@ -10,7 +10,6 @@ services:
       - CACHE_TTL=${CACHE_TTL}
       - MODEL_SERVICE_HOST=model-service
       - APP_VERSION=${APP_SERVICE_VERSION}
-      - MODEL_SERVICE_VERSION=${MODEL_SERVICE_VERSION}
       - MODEL_SERVICE_PORT=${MODEL_SERVICE_PORT}
       - PORT=${CONTAINER_PORT}
     restart: always
