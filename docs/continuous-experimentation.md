@@ -4,10 +4,6 @@ In v2, we added a Redis cache layer in front of the model inference logic.
 ## Hypothesis
 We hypothesize that `app:v2` will have a lower average `sentiment_response_time` compared to `v1`.
 
-## Metrics
-- `sentiment_response_time_hist` (Histogram)
-- `sentiment_response_time_seconds_count`
-
 ### Experiment Setup
 - Both versions are deployed using separate Deployments (v1 and v2).
     - v1: [`ghcr.io/remla25-team1/app:0.0.6-pre-20250528-002`](https://github.com/remla25-team1/app/releases/tag/v0.0.6-pre-20250528-002)
@@ -15,42 +11,74 @@ We hypothesize that `app:v2` will have a lower average `sentiment_response_time`
 - Istio VirtualService routes 90% of traffic to v1, and 10% to v2.
 - Prometheus scrapes app-specific metrics, and Grafana visualizes latency distribution.
 
+
+## Metrics
+The metric used is a histogram, and the average response time is calculated using the standard PromQL formula:
+(a)
+```
+sum by (app_version, source) (
+  rate(sentiment_response_time_seconds_sum[$__interval])
+)
+/
+sum by (app_version, source) (
+  rate(sentiment_response_time_seconds_count[$__interval])
+)
+```
+
+(b)
+```
+#Query A:
+
+sum by (app_version) (
+  rate(sentiment_response_time_seconds_sum{app_version="0.0.6-pre-20250617-001"}[$__interval])
+)
+/
+sum by (app_version) (
+  rate(sentiment_response_time_seconds_count{app_version="0.0.6-pre-20250617-001"}[$__interval])
+)
+
+
+# Query B:
+sum by (app_version) (
+  rate(sentiment_response_time_seconds_sum{app_version="0.0.6-pre-20250617-003"}[$__interval])
+)
+/
+sum by (app_version) (
+  rate(sentiment_response_time_seconds_count{app_version="0.0.6-pre-20250617-003"}[$__interval])
+)
+
+```
+
+They compute the smoothed average latency over time, combining total observed durations and total request counts.
+
 ### Result
 The screenshot below shows the Prometheus metrics collected during the experiment. 
 
-![metrics screenshot](images/metrics_screenshot.png)
+![ABtest1](images/AB_test_1.png)
+![ABtest2](images/AB_test_2.png)
 
 ### Observations
-The `sentiment_source_total counter` clearly distinguishes between predictions served from the model (`source="model"`) and from Redis cache (`source="cache"`):
+App version `0.0.6-pre-20250617-001` uses only model inference and achieves an average response time of `~0.0173s`.
 
-- Model-based responses: 4
+App version `0.0.6-pre-20250617-003` introduces Redis caching, resulting in:
 
-- Cache-based responses: 21
+Cache responses: `~0.00025s`
 
-The `sentiment_response_time_seconds histogram` shows:
+Model responses: `~0.0330s`
 
-- Responses from cache (`source="cache"`) consistently completed in under **0.01 seconds**.
-
-- Model-based predictions (`source="model"`) had significantly higher response time buckets, reaching up to **~0.5 seconds**.
+Combined average: `~0.00353s`
 
 
 
 ### Decision
-Based on observed metrics, we could calculate that
-- Model-based (`source="model"`):
-    - `sentiment_response_time_seconds_sum`: `~0.4681`
-    - `sentiment_response_time_seconds_count`: `4`
+Version `0.0.6-pre-20250617-003` performs significantly better than `001` in terms of response time.
 
-    - → **Avg time (model)** = `0.4681 / 4` ≈ **117 ms**
+With caching, most responses in `003` return almost instantly (`~0.25ms`).
 
-- Cache-based (`source="cache"`):
+Its overall average response time is much lower than `001` (`0.0035s` vs. `0.0173s`).
 
-    - `sentiment_response_time_seconds_sum`: `~0.0053`
+Although model responses in `003` are slightly slower, the impact is minimal due to high cache usage.
 
-    - s`entiment_response_time_seconds_count`:`21`
-
-    - → **Avg time (cache)** = `0.0053 / 21` ≈ **0.25 ms**
- 
- Therefore, v2 reduced avg inference time from **117ms** to **0.25ms**, which is a **468x improvement**. we recommend rolling it out to all users.
+Thus, We choose version `003` for deployment, as it provides much faster responses with no negative impact on correction rate.
 
 

@@ -26,7 +26,7 @@ spec:
             - containerPort: {{ .Values.modelService.containerPort }}
           envFrom:
             - configMapRef:
-                name: {{ .Release.Name }}-application-config
+                name: {{ .Release.Name }}-application-config-model-service
           volumeMounts:
             - name: app-data
               mountPath: {{ .Values.modelService.mounts.appData }}

@@ -29,7 +29,7 @@ spec:
             - containerPort: {{ .Values.app.service.targetPort }}
           envFrom:
             - configMapRef:
-                name: {{ .Release.Name }}-application-config
+                name: {{ .Release.Name }}-application-config-v2
           volumeMounts:
             - name: app-data
               mountPath: {{ .Values.app.v2.mounts.data }}
