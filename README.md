@@ -86,7 +86,7 @@ cp ~/.ssh/id_rsa.pub ssh_keys/id_rsa.pub
 
 ## Running Application on Kubernetes Cluster
 
-Navigate into ```operation``` dir and run the commands below. 
+Navigate into ```operation``` dir and run the commands below:
 ```bash
 chmod +x run-all.sh
 ./run-all.sh
@@ -144,9 +144,6 @@ kubectl delete pods -l app=model-service
 - Inspecting all config maps installed in the cluster:
 ```bash
 kubectl get configmaps
-# NAME                 DATA   AGE
-# application-config   6      52m
-# kube-root-ca.crt     1      4h33m
 ```
 
 - Pushing new Docker image of a repo so that it can be deployed on the running cluster (```app``` example):
@@ -166,9 +163,6 @@ kubectl rollout status deployment app
 
 # confirm that the new pod is running (below, you can see the age difference)
 kubectl get pods -o wide
-# NAME                            READY   STATUS    RESTARTS   AGE   IP           NODE         NOMINATED NODE   READINESS GATES
-# app-778466bdff-mzjxl            1/1     Running   0          82s   10.244.2.7   k8s-node-2   <none>           <none>
-# model-service-5987884b9-mjjln   1/1     Running   0          46m   10.244.1.7   k8s-node-1   <none>           <none>
 ```
 
 ---
