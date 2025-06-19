@@ -1,58 +1,99 @@
 # REMLA-25, Team 1, Operation
-This repository contains a modular tweet sentiment analysis system, organized into six individual repositories under the `remla25-team1` organization:
 
-* **app**: Front-end application and API gateway responsible for serving pages and forwarding model inference requests.
-* **model-service**: Microservice for handling sentiment classification requests, interfacing with the preprocessing library and the trained model.
-* **model-training**: Training pipeline to build and export sentiment classification models.
-* **lib-ml**: Shared preprocessing library for text cleaning, tokenization, and feature extraction.
-* **lib-version**: Versioning library to manage and expose the current application version.
-* **operation**: Deployment and orchestration artifacts (e.g., Docker, Kubernetes manifests) for the end-to-end system.
+This repository defines the **infrastructure and deployment** setup for a modular tweet sentiment analysis system. The system is split across six repositories within the `remla25-team1` GitHub organization:
+
+* **[app](https://github.com/remla25-team1/app)**: Front-end application and API gateway responsible for serving pages and forwarding model inference requests.
+* **[model-service](https://github.com/remla25-team1/model-service)**: Microservice for handling sentiment classification requests, interfacing with the preprocessing library and the trained model.
+* **[model-training](https://github.com/remla25-team1/model-training)**: Training pipeline to build and export sentiment classification models.
+* **[lib-ml](https://github.com/remla25-team1/lib-ml)**: Shared preprocessing library for text cleaning, tokenization, and feature extraction.
+* **[lib-version](https://github.com/remla25-team1/lib-version)**: Versioning library to manage and expose the current application version.
+* **[operation (this repo)](https://github.com/remla25-team1/operation)**: Orchestration and deployment via Docker, Kubernetes, Helm, Prometheus, Istio, etc.
 
 Each component can be developed, tested, and deployed independently, yet they form a cohesive machine learning-powered web service.
 
+---
+
 ## Contents
 
-- [Install & Run](#install--run)
-- [Clone the Repository](#clone-the-repository)
+- [Use-Case](#use-case-tweet-sentiment-analysis)
+- [Setup](#setup)
 - [Running Application on Kubernetes Cluster](#running-application-on-kubernetes-cluster)
-- [Other Commands](#other-commands)
-- [Other Useful Stuff](#other-useful-stuff)
-- [Helm](#helm)
-- [Setup Prometheus](#setup-prometheus)
+  - [Useful Commands](#useful-commands)
+- [Verify Prometheus Setup](#verify-prometheus-setup)
 - [Grafana](#grafana)
   - [Auto-load via ConfigMap](#auto-load-via-configmap)
   - [Import the Dashboard Manually](#import-the-dashboard-manually)
 - [Testing Istio](#testing-istio)
+- [Running the App with Docker Compose](#running-the-app-with-docker-compose)
 
-## Install & Run
+---
 
-Make sure you have the following installed:
+## Use-Case: Tweet Sentiment Analysis
+
+Our application features a simple interface where users can enter a tweet to analyze its sentiment. When submitted, the backend runs a sentiment analysis model and displays the predicted sentiment. The user then sees whether the tweet is positive or negative, and can confirm or correct this prediction. This feedback helps improve the model and makes the app more interactive and accurate over time.
+
+### Example Screenshots
+
+#### 1. Negative Comment 
+![alt text](cases/negative.png)
+[Original tweet available here](https://x.com/JtheCat3/status/1864351776868094126)
+
+#### 2. Positive Comment
+![alt text](cases/positive.png)
+[Original tweet available here](https://x.com/TinuKuye/status/1719440898696630564)
+
+#### 3. Correct Predictions
+![alt text](cases/correction.png)
+[Original tweet available here](https://x.com/TinuKuye/status/1719440898696630564)
+
+---
+
+## Setup
+
+### 1. Install Required Tools
+
+Before getting started, ensure the following tools are installed on your system:
 - [Docker & Docker Compose](https://docs.docker.com/compose/install/)
 - [Vagrant](https://developer.hashicorp.com/vagrant/install)
 - [Ansible](https://docs.ansible.com/ansible/latest/installation_guide/index.html)
 - [Kubectl](https://kubernetes.io/docs/tasks/tools/)
 - [Helm](https://helm.sh/docs/intro/install/)
 
+### 2. SSH Key Setup
 
-## Clone the Repository
+To securely access services or systems in this project, you need to provide your **public SSH key**. Please follow the steps below to generate your key and add it to the correct location.
 
-Clone the **operation** repository from GitHub (e.g., using SSH):
+#### 1. Generate a new SSH key pair (if you don’t already have one):
+```bash
+ssh-keygen -t rsa -b 4096 -C "your_email@example.com"
+```
+- When prompted for a file path, you can press `Enter` to accept the default (`~/.ssh/id_rsa`), or specify a custom name.
+- You can also set a passphrase (recommended for security), or leave it blank.
 
-   ```bash
-   git clone git@github.com:remla25-team1/operation.git
-   cd operation
-   ```
+#### 2. Locate your public key:
+Your public key will typically be located at:
+```bash
+~/.ssh/id_rsa.pub
+```
+or at the custom path you provided.
+
+#### 3. Copy your `.pub` file into the `ssh_keys/` folder of this repository:
+```bash
+cp ~/.ssh/id_rsa.pub ssh_keys/id_rsa.pub
+```
+
+---
 
 ## Running Application on Kubernetes Cluster
-Navigate into ```operation``` dir and run the code below.
 
+Navigate into ```operation``` dir and run the commands below:
 ```bash
 chmod +x run-all.sh
 ./run-all.sh
 ```
 
-This will set up all services. The script takes a good while to run, so take your time. During step 3 of the process (indicated in the terminal), you will be asked for your Github username, PAT token, and Github email address. This is so that you can pull the latest images to deploy on the cluster. Set up a ```imagePullSecrets``` for GHCR: first generate a new token (classic) on Github. Give it scopes ```read:packages, repo```. Copy the token and paste it in the PAT token space.
-You will be asked for your ```BECOME``` password. This is so that the playbook can run commands in ```sudo``` mode. Simply fill in your host password here.
+
+This will set up all services. The script takes a good while to run, so take your time. During step 3 of the process (indicated in the terminal), you will be asked for your Github username, PAT token, and Github email address. This is so that you can pull the latest images to deploy on the cluster. Set up a `imagePullSecrets` for GHCR: first generate a new token (classic) on Github. Give it scopes `read:packages, repo`. Copy the token and paste it in the PAT token space. You will be asked for your `BECOME` password. This is so that the playbook can run commands in `sudo` mode. Simply fill in your host password here.
 
 At the end of the script, you will be asked to execute the following command, so that you can execute ```kubectl``` commands in the terminal:
 ```bash
@@ -76,30 +117,17 @@ chmod +x cleanup.sh
 ./cleanup.sh
 ```
 
+### Useful Commands
+
+These commands can help you debug, manage, and restart your application components more effectively during development or deployment.
+
+- Inspect resources:
 ```bash
-kubectl describe ingress app-ingress
-# Name:             app-ingress
-# Labels:           <none>
-# Namespace:        default
-# Address:          
-# Ingress Class:    <none>
-# Default backend:  <default>
-# Rules:
-#   Host        Path  Backends
-#   ----        ----  --------
-#   app.local   
-#               /   app:8080 (10.244.2.29:8080)
-# Annotations:  nginx.ingress.kubernetes.io/rewrite-target: /
-# Events:       <none>
-kubectl get svc app
-# NAME   TYPE       CLUSTER-IP      EXTERNAL-IP   PORT(S)          AGE
-# app    NodePort   10.96.110.197   <none>        8080:32045/TCP   140m
-kubectl get endpoints app
-# NAME   ENDPOINTS          AGE
-# app    10.244.2.29:8080   140m
+kubectl describe ingress sentiment-app-ingress
+kubectl get sentiment-app
+kubectl get endpoints sentiment-app
 ```
 
-#### Other useful commands:
 - Triger a rollout restart:
 ```bash
 kubectl rollout restart deployment app
@@ -116,9 +144,6 @@ kubectl delete pods -l app=model-service
 - Inspecting all config maps installed in the cluster:
 ```bash
 kubectl get configmaps
-# NAME                 DATA   AGE
-# application-config   6      52m
-# kube-root-ca.crt     1      4h33m
 ```
 
 - Pushing new Docker image of a repo so that it can be deployed on the running cluster (```app``` example):
@@ -138,14 +163,13 @@ kubectl rollout status deployment app
 
 # confirm that the new pod is running (below, you can see the age difference)
 kubectl get pods -o wide
-# NAME                            READY   STATUS    RESTARTS   AGE   IP           NODE         NOMINATED NODE   READINESS GATES
-# app-778466bdff-mzjxl            1/1     Running   0          82s   10.244.2.7   k8s-node-2   <none>           <none>
-# model-service-5987884b9-mjjln   1/1     Running   0          46m   10.244.1.7   k8s-node-1   <none>           <none>
 ```
 
-## Check if Prometheus works
+---
 
-### 1. Access Prometheus Web UI
+## Verify Prometheus Setup
+
+### 1. Access the Prometheus Web UI
 ```sh
 kubectl port-forward -n monitoring svc/prometheus-kube-prometheus-prometheus 9090:9090
 ```
@@ -158,13 +182,15 @@ To verify that your metrics endpoints are being scraped:
 - Look for your application's Service name or Pod name in the targets list
 - Check the status (should be "UP")
 
-### 2. Test if metrics endpoint is reachable from inside the cluster
+### 2. Test if Metrics Endpoint is Reachable from Inside the Cluster
 
 ```sh
 kubectl port-forward svc/sentiment-app-app 8080:8080
 
 curl http://localhost:8080/metrics
 ```
+
+---
 
 ## Test Alerting Capabilities 
 
@@ -220,7 +246,10 @@ kubectl port-forward -n monitoring svc/alertmanager-operated 9093
 Then visit: [http://localhost:9093](http://localhost:9093).
 You should see the alert listed there.
 
+---
+
 ## Grafana 
+
 We provide a pre-configured dashboard for monitoring with 4 pannels:
 
 - Request count by sentiment (sentiment_requests_total)
@@ -231,12 +260,13 @@ We provide a pre-configured dashboard for monitoring with 4 pannels:
 
 - In-progress requests (sentiment_requests_in_progress)
 
-### Auto-load via ConfigMap (Not available yet.)
+### Auto-load via ConfigMap 
+(Not available yet.)
 ```bash
 kubectl apply -f dashboard/tweet-sentiment-dashboard-configmap.yaml
 ```
 
-### Import the dashboard manually 
+### Import the Dashboard Manually 
 - Open Grafana 
    - Access to grafana:
       ```bash
@@ -252,6 +282,7 @@ kubectl apply -f dashboard/tweet-sentiment-dashboard-configmap.yaml
 
 - Select Prometheus as data source, click Import
 
+---
 
 ## Testing Istio
 The cluster is configured with Istio in the ```migrate.yaml``` playbook which you ran above. To test the Istio traffic management functionality, you can try the following two tests:
@@ -270,53 +301,38 @@ done
 curl -H "user-group: canary" http://<INGRESS_IP>/
 ```
 
-## Use-Case: Tweet Sentiment Analysis
-
-Our application features a simple interface where users can enter a tweet to analyze its sentiment. When submitted, the backend runs a sentiment analysis model and displays the predicted sentiment. The user then sees whether the tweet is positive or negative, and can confirm or correct this prediction. This feedback helps improve the model and makes the app more interactive and accurate over time.
-
-### Negative Comment
-![alt text](cases/negative.png)
-
-[Original tweet available here](https://x.com/JtheCat3/status/1864351776868094126)
-
-### Positive Comment
-![alt text](cases/positive.png)
-
-[Original tweet available here](https://x.com/TinuKuye/status/1719440898696630564)
-
-### Correct Predictions
-![alt text](cases/correction.png)
-
-[Original tweet available here](https://x.com/TinuKuye/status/1719440898696630564)
-
-
-## Related Repositories
-
-* [app](https://github.com/remla25-team1/app)
-* [model-service](https://github.com/remla25-team1/model-service)
-* [model-training](https://github.com/remla25-team1/model-training)
-* [lib-ml](https://github.com/remla25-team1/lib-ml)
-* [lib-version](https://github.com/remla25-team1/lib-version)
-* [operation](https://github.com/remla25-team1/operation)
-
-## Auto-update version tags in PEER.md
-Navigate to project root and run (in a virtual environment):
-```
-pip install -r scripts/requirements.txt
-python scripts/peer-release.py
-```
-## Progress Log
-
-**model-service**: Implemented core sentiment analysis module in `model-service`, leveraging a baseline logistic regression model for binary classification, and designed the HTTP endpoint to accept raw comments and return sentiment labels.
-
-**app(app-frontend, app-service)**: Developed the `app` front-end with React, integrated request forwarding logic to the `model-service`, and added client-side version display using the `lib-version` service.
-
-**lib-version**: Created the `lib-version` library with semantic versioning support, implemented an HTTP server to expose version information.
-
-**lib-ml**: Built the `lib-ml` preprocessing pipeline, integrated the library into `model-service` for consistent preprocessing.
-
-**model-training**: Completed the `model-training` pipeline: read datasets, trained models, and exported the model artifact for inference in `model-service`.
-
-**operation**: Provides a simple Dockerfile setup along with clear documentation for running the entire system locally.
-
 ---
+
+## Running the App with Docker Compose
+
+### 1. Clone All Repositories
+
+You can clone all required repositories for local development with the provided script:
+```bash
+chmod +x clone-all.sh
+./clone-all.sh
+```
+
+After cloning, switch to the **operation** repository:
+```bash
+cd operation
+```
+
+Make sure you have SSH access to all repositories (see SSH key setup in ...)
+
+### 2. Run the Application with Docker Compose
+
+From the root of the `operation` repository, build and start all services:
+```bash
+docker compose up --build
+# or
+docker-compose up --build
+```
+
+### 3. Stop and Clean Up
+To stop and remove the containers and associated resources, run the following command:
+```bash
+docker compose down
+# or
+docker-compose down
+```

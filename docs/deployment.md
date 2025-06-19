@@ -1,79 +1,12 @@
-# 📄 Deployment Documentation
+# Deployment Documentation
 
-## 📦 Helm Chart Overview
+This document provides a conceptual overview of our final deployment architecture for the tweet sentiment analysis system. It is written to help new contributors understand the system's structure, component interactions, and request flow, so they can participate in design discussions and modifications.
 
-Our Helm chart defines all application and monitoring resources under `helm_chart/templates/`. The structure:
+The deployment uses Kubernetes and Istio for orchestration and traffic management, with Prometheus and Grafana for observability. Helm is used to manage configuration and deployment artifacts.
 
-```mermaid
-graph TD
-  A[operation/] --> B[helm_chart/]
-  B --> C[templates/]
-  C --> C1[_helpers.tpl]
-  C --> C2[NOTES.txt]
-  C --> C3[app-deployment.yaml]
-  C --> C4[app-service.yaml]
-  C --> C5[configMap.yaml]
-  C --> C6[ingress.yaml]
-  C --> C7[model-deployment.yaml]
-  C --> C8[model-service.yaml]
-  C --> C9[secret.yaml]
-  C --> C10[servicemonitor.yaml]
-  B --> D[values.yaml]
-  B --> E[Chart.yaml]
-```
-- **app-deployment.yaml**: Defines Deployment for `app` (1 replica, NodePort).  
-- **app-service.yaml**: Exposes `app` via Service (port 8080).  
-- **model-deployment.yaml**: Defines Deployment for `model-service` (1 replica).  
-- **model-service.yaml**: Exposes `model-service` via Service (port 5000).  
-- **configMap.yaml**: Application configuration (environment variables).  
-- **secret.yaml**: Docker credentials (GHCR) and SMTP credentials for alerts.  
-- **ingress.yaml**: Routes `app.local` to Service `app`.  
-- **servicemonitor.yaml**: Instructs Prometheus to scrape metrics from `app` and `model-service`.  
+---
 
-`values.yaml` holds configurable parameters (e.g., image tags, replica counts, ports).  
-`Chart.yaml` defines chart metadata.
-
-## 🧩 Resources Overview
-
-### Helm Chart (helm_chart/templates/)
-| File                   | Type           | Description                                                                                   |
-|------------------------|----------------|-----------------------------------------------------------------------------------------------|
-| `_helpers.tpl`          | Helper Template| Contains helper functions (e.g., naming conventions).                                        |
-| `NOTES.txt`            | Notes          | Outputs post-install reminders.                                                              |
-| `app-deployment.yaml`  | Deployment     | Deploys app containers (1 replica, labeled `{ .Release.Name }}-app`).                                      |
-| `app-service.yaml`     | Service        | Exposes app pods on port 8080 (NodePort).                                                    |
-| `model-deployment.yaml`| Deployment     | Deploys model-service containers (1 replica, labeled `{ .Release.Name }}-app`).                   |
-| `model-service.yaml`   | Service        | Exposes model-service on port 5000 (ClusterIP).                                              |
-| `configMap.yaml`       | ConfigMap      | Defines environment variables: `MODEL_SERVICE_HOST`, `MODEL_SERVICE_PORT`, feature flags.    |
-| `secret.yaml`          | Secret         | Holds `ghcr-secret` (docker registry) and `smtp-credentials` (alerts).                       |
-| `ingress.yaml`         | Ingress        | Routes external traffic for `app.local` → Service `app`.                                     |
-| `servicemonitor.yaml`  | ServiceMonitor | Prometheus scrape configuration for `app` and `model-service`.                               |
-
-### Raw Manifests (k8s/)
-| File                      | Type                        | Description                                                       |
-|---------------------------|-----------------------------|-------------------------------------------------------------------|
-| `application-config.yaml`  | ConfigMap                   | Mirrors `configMap.yaml` values for direct `kubectl apply`.       |
-| `app.yaml`                | Deployment + Service + Ingress | Simplified app Deployment, Service, and Ingress (legacy).         |
-| `model-service.yaml`      | Deployment + Service         | Simplified model-service Deployment and Service (legacy).         |
-| `ingress.yaml`            | Ingress                     | Legacy Ingress for app.                                           |
-
-### Monitoring (Installed via Helm)
-| Resource                      | Type           | Description                                                                                      |
-|-------------------------------|----------------|------------------------------------------------------------------------------------------------|
-| ServiceMonitor via Helm Chart  | ServiceMonitor | Auto-discovered metrics for `app` and `model-service`.                                          |
-| PrometheusRule via Helm values | PrometheusRule | Defines alert `HighRequestRate` if `rate(sentiment_requests_total[1m]) > 15` for 2 minutes.     |
-| AlertmanagerConfig via Helm values | AlertmanagerConfig | Routes alerts to SMTP receiver using `smtp-credentials`.                                       |
-
-### Other
-| File/Directory              | Type            | Description                                                                                     |
-|----------------------------|-----------------|------------------------------------------------------------------------------------------------|
-| `join_cluster.sh`           | Script          | Automates joining worker nodes to control plane.                                               |
-| `playbooks/*.yaml`          | Ansible Playbooks| Provision control-plane and worker nodes: disable swap, set sysctls, mount `/mnt/shared`, install Kubernetes. |
-| `templates/hosts.j2`        | Jinja2 Template | Generates `/etc/hosts` on each VM with node IPs/hostnames.                                     |
-| `Vagrantfile`               | Vagrant Config  | Spins up 3 VMs: ctrl, k8s-node-1, k8s-node-2.                                                 |
-
-
-## 🌐 Application General Overview
+## High-Level Architecture
 
 ```mermaid
 graph LR
@@ -88,151 +21,140 @@ graph LR
   end
 
   subgraph Ingress
-    INGRESS[Ingress Controller]
+    INGRESS[Istio IngressGateway]
   end
 
   USER[User Browser]
 
   USER -->|HTTP Request| INGRESS
-  INGRESS -->|Route to app Service| APPSVC
-  APPSVC -->|API Calls| MODELSVC
+  INGRESS -->|Route| APPSVC
+  APPSVC -->|Call| MODELSVC
   MODELSVC --> MODEL
 
-  style APP fill:#9fdfbf,stroke:#333,stroke-width:2px
-  style MODEL fill:#f9d4a6,stroke:#333,stroke-width:2px
+  style APP fill:#c8e6c9,stroke:#333,stroke-width:2px
+  style MODEL fill:#ffe0b2,stroke:#333,stroke-width:2px
   style INGRESS fill:#bbdefb,stroke:#333,stroke-width:2px
 ```
 
-- **Ingress Controller**:  
-  Receives `app.local` traffic (LoadBalancer IP `192.168.56.90`) and forwards to the `app` Service.
-
-- **app Service**:  
-  Routes traffic to the single `app` Pod running the frontend and API gateway.
-
-- **model-service Service**:  
-  Routes traffic to the single `model-service` Pod performing ML inference.
 ---
 
-## 🛠️ Istio-Specific Visualization​
-
-```mermaid
-graph TD
-  classDef istio fill:#4f8bff,stroke:#333
-  classDef k8s fill:#42b983,stroke:#333
-  
-  A[User] --> B(Istio IngressGateway)
-  B --> C{{VirtualService}}
-  C -->|90%| D[App v1]
-  C -->|10%| E[App v2]
-  D --> F[Model v1]
-  E --> G[Model v2]
-  class B,C istio;
-  class D,E,F,G k8s;
-```
-
-## 🔁 Request Handling Flow
-
-- User sends a request to `http://app.local/predict?tweet="I love cats!"`.
-
-- Ingress Controller (`192.168.56.90`) routes based on host/path → Service **app**.
-
-- **app** pods (1 replica) handle the request:
-  - Increment counter `sentiment_requests_total`
-  - Start timer for histogram `sentiment_response_time_seconds`
-  - Forward inference request to **model-service**
-
-- **model-service** pods (1 replica) process inference:
-  - Preprocess input (using `lib-ml`)
-  - Increment counter `sentiment_inference_total`
-  - Record histogram `sentiment_inference_latency_seconds`
-  - Return `{ "sentiment": "positive" }`
-
-- **app** pods record response metrics:
-  - Stop timer → record `sentiment_response_time_seconds`
-  - Increment counter `sentiment_responses_total{sentiment="positive"}`
-
-- Response is returned to the user’s browser.
+## Key Components
+- **Frontend (`app`)**: Serves the web interface and exposes a REST API for predictions.
+- **Backend (`model-service`)**: Performs sentiment analysis based on incoming JSON data.
+- **Istio IngressGateway**: Manages external access and routes traffic to internal services.
+- **Helm**: Templates and installs Kubernetes manifests.
+- **Prometheus**: Scrapes metrics from services at regular intervals.
+- **Grafana**: Provides real-time dashboards for visualizing system performance.
 
 ---
 
-Every 15 seconds:
-
-- Prometheus scrapes `/metrics` from all **app** and **model-service** pods (via ServiceMonitor).
-
-- Grafana dashboards update with the latest metrics.
+## Data Flow
 
 ```mermaid
 sequenceDiagram
     autonumber
     actor User
-    participant Ingress
-    participant AppService
-    participant AppPod
-    participant ModelService
-    participant ModelPod
+    participant Ingress as Istio IngressGateway
+    participant AppService as Frontend Service
+    participant AppPod as Frontend Pod
+    participant ModelService as Backend Service
+    participant ModelPod as Model Pod
     participant Prometheus
     participant Grafana
     participant Alertmanager
 
-    User->>Ingress: GET /predict?tweet="I love cats!"
-    Ingress->>AppService: Forward request
-    AppService->>AppPod: Route to replica
-    
-    Note right of AppPod: Record request metrics
-    
-    AppPod->>ModelService: POST /infer
-    ModelService->>ModelPod: Route to replica
-    
-    Note right of ModelPod: Process inference
-    
-    ModelPod-->>AppPod: Return sentiment
-    AppPod-->>User: Return JSON response
-    
-    Note left of AppPod: Record response metrics
+    User->>Ingress: POST /sentiment {"tweet": "I love this project!"}
+    Ingress->>AppService: Route to app service
+    AppService->>AppPod: Forward to pod
 
-    loop Every 15s
+    Note right of AppPod: Record incoming request metric
+
+    AppPod->>ModelService: POST /predict {"tweet": "I love this project!"}
+    ModelService->>ModelPod: Forward to pod
+
+    Note right of ModelPod: Run sentiment prediction
+
+    ModelPod-->>AppPod: Return result
+    AppPod-->>User: Send back prediction
+
+    loop every 15s
         Prometheus->>AppPod: Scrape metrics
         Prometheus->>ModelPod: Scrape metrics
     end
 
     Prometheus->>Grafana: Update dashboards
-    
-    alt High traffic detected
+
+    alt Alert condition met
         Prometheus->>Alertmanager: Trigger alert
         Alertmanager->>Team: Send notification
     end
 ```
 
+1. **User Request:** A user accesses the app via `POST /sentiment {"tweet": "I love this project!"}`.
+2. **Routing via Ingress:** The Istio IngressGateway routes the request to the appropriate frontend service.
+3. **Frontend Processing:**
+    - The service logs the request and exposes metrics.
+    - It forwards the text to the model service for inference.
+4. **Model Inference:**
+    - The backend model pod processes the tweet and returns the sentiment.
+    - The frontend responds to the user and logs the result.
+5. **Observability:**
+    - **Prometheus** scrapes metrics every 15s from both services.
+    - **Grafana** displays the metrics on dashboards.
+    - **Alertmanager** triggers notifications (e.g., high request rates).
+
 ---
 
+## Dynamic Traffic Routing with Istio
 
+Multiple versions of services are deployed to support controlled experiments:
+```mermaid
+graph TD
+  classDef istio fill:#4f8bff,stroke:#333
+  classDef k8s fill:#42b983,stroke:#333
 
-## 🧭 Dynamic Routing and Canary Releases
+  A[User] --> B(Istio IngressGateway)
+  B --> C{{VirtualService}}
+  C -->|90%| D[App v1]
+  C -->|10%| E[App v2]
+  D --> F[Model]
+  E --> F
+  class B,C istio;
+  class D,E,F k8s;
+```
 
-- We (will) deploy two versions each of the frontend and backend:  
-  - Frontend: `app-service-v1`, `app-service-v2`  
-  - Backend: `model-service-v1`, `model-service-v2`  
-- The VirtualService (or Ingress rules) direct traffic dynamically with weights, for example:  
-  - 90% traffic to `app-service-v1`, 10% to `app-service-v2` (frontend)  
-  - Similarly for backend services.  
+- We deploy multiple versions of our frontend simultaneously:
+  - Frontend: `v1` and `v2`
+- The VirtualService (or Ingress rules) direct traffic dynamically with weights. We use the following split:
+  - 90% traffic to `v1`, 10% to `v2` (frontend)
 - This routing enables canary releases and continuous experimentation by gradually shifting traffic.
+- Currently we manually update the weights.
 
 ---
 
-## 🔧 Notes on Cluster Resources
+## Observability Stack
 
-- Services expose pods inside the cluster and allow load balancing.  
-- Ingress exposes services externally with domain-based routing.  
-- ConfigMaps and Secrets manage configuration and sensitive data.  
-- ServiceMonitor integrates with Prometheus for monitoring metrics.
+| Component          | Purpose                                    |
+| ------------------ | ------------------------------------------ |
+| **Prometheus**     | Scrapes `/metrics` from services           |
+| **ServiceMonitor** | Declares which services Prometheus scrapes |
+| **Grafana**        | Dashboards for live visualization          |
+| **Alertmanager**   | Sends alerts (e.g., on high traffic)       |
+
+Metrics include request counts, latencies, error rates, and custom application metrics.
 
 ---
 
-## 🎯 Summary
+## Design Summary
 
-This deployment setup provides a robust, scalable, and flexible infrastructure:  
+This deployment setup provides a robust, scalable, and flexible infrastructure:
 
-- Clear separation between frontend and backend services.  
-- Support for versioning and canary deployment strategies.  
-- Integration with Kubernetes-native resources for easy management.  
-- Monitoring ready via Prometheus and Grafana dashboards.
+- Clear service separation and modularity (frontend/backend split).
+
+- Istio for intelligent ingress and service-level traffic management.
+
+- Version-aware deployments support controlled testing strategies.
+
+- Built-in observability with Prometheus + Grafana.
+
+- Alerting via Alertmanager ensures proactive issue handling.
