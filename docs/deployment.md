@@ -69,7 +69,7 @@ sequenceDiagram
 
     Note right of AppPod: Record incoming request metric
 
-    AppPod->>ModelService: POST /infer
+    AppPod->>ModelService: POST /predict {"tweet": "I love this project!"}
     ModelService->>ModelPod: Forward to pod
 
     Note right of ModelPod: Run sentiment prediction
