@@ -6,3 +6,5 @@ cached_model/
 kubeconfig-vagrant
 venv
 .run.sh.state
+.env-E
+.env.bak
