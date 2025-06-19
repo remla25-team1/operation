@@ -81,6 +81,6 @@ With caching, most responses in `0.0.6-pre-20250617-003` return almost instantly
 
 Its overall average response time is much lower than `0.0.6-pre-20250617-001` (`0.0035s` vs. `0.0173s`).
 
-Thus, We choose version `0.0.6-pre-20250617-003` for deployment, as it provides much faster responses with no negative impact on correction rate.
+Thus, We choose version `0.0.6-pre-20250617-003` for deployment, as it provides much faster responses.
 
 
