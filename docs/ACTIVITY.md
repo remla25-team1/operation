@@ -126,11 +126,14 @@ Approved PR: https://github.com/remla25-team1/model-training/pull/8
 # Week 6
 ### -- Anna: --
 Created PR: https://github.com/remla25-team1/model-training/pull/9 (related to A4)
+
 https://github.com/remla25-team1/operation/pull/12 (related to A3)
+
 https://github.com/remla25-team1/operation/pull/14 (related to A5)
 
-Approved PR: https://github.com/remla25-team1/model-training/pull/10
-https://github.com/remla25-team1/model-training/pull/11
+Approved PR: https://github.com/remla25-team1/model-training/pull/10 (related to A4)
+
+https://github.com/remla25-team1/model-training/pull/11 (related to A4)
 
 ### -- Sofia: --
 Created PR: https://github.com/remla25-team1/operation/pull/16 (related to A5)
@@ -180,7 +183,7 @@ Approved PR:
 
 # Week 8
 ### -- Anna: --
-Created PR: 
+Created PR: https://github.com/remla25-team1/operation/pull/18 (related to A5, created the first commits in this PR)
 
 Approved PR: 
 
@@ -201,9 +204,11 @@ Approved PR:
 
 # Week 9
 ### -- Anna: --
-Created PR: 
+Created PR: https://github.com/remla25-team1/operation/pull/23 (related to A1 + A2)
 
-Approved PR: 
+Approved PR: https://github.com/remla25-team1/operation/pull/25 (related to A5)
+https://github.com/remla25-team1/operation/pull/21 (reviewed, related to A3)
+
 
 ### -- Sofia: --
 Created PR: https://github.com/remla25-team1/operation/pull/25 (related to A5)
