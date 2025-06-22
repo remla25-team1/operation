@@ -46,5 +46,6 @@ metadata:
   name: {{ .Release.Name }}-application-config-model-service
 data:
   MODEL_SERVICE_VERSION: "{{ .Values.config.modelServiceVersion }}"
+  MODEL_VERSION:       "{{ .Values.config.modelVersion }}"
   PORT:              "{{ .Values.config.port }}"
   HOST:              "{{ .Values.config.host }}"

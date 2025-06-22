@@ -4,6 +4,7 @@ config:
   appVersionV1: "0.0.6-pre-20250617-001"
   appVersionV2: "0.0.6-pre-20250617-003"
   modelServiceVersion: "latest"
+  modelVersion: "v0.1.0"
   port:             "8080"
 
   # Model-service config
@@ -101,7 +102,7 @@ modelService:
   # image repository and tag
   image:
     repository: ghcr.io/remla25-team1/model-service
-    tag: latest
+    tag: 0.0.8
 
   # which host to mount the shared volume on
   nodeSelector:
