@@ -123,6 +123,7 @@
       become_user: vagrant
       environment:
         KUBECONFIG: /home/vagrant/.kube/config
+      ignore_errors: true  
  
 
     - name: Fetch kubeconfig for local use
