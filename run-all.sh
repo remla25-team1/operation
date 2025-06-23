@@ -7,7 +7,10 @@ STATE_FILE=".run.sh.state"
 # ──────────────────────────────────────────────────────────────────────────────
 step1_vagrant_up() {
   echo "-> [Step 1] vagrant up"
+  SECONDS=0
   vagrant up
+  duration=$SECONDS
+  echo "PROVISIONING TIMER: Step 1 took $((duration / 60))m $((duration % 60))s"
   echo 2 > "$STATE_FILE"
   echo "Sleeping ${SLEEP_TIME}s…"; sleep "$SLEEP_TIME"
 }
