@@ -73,7 +73,11 @@ step3_migrate() {
   TAG="${TAG#v}"
   echo "Using tag $TAG: for model-service"
 
-  # Update tags using yq
+  # Update tags in values.yaml under config:
+  yq e ".config.appVersionV1 = \"$LATEST_TAG\"" -i helm_chart/values.yaml
+  yq e ".config.appVersionV2 = \"$PREV_TAG\"" -i helm_chart/values.yaml
+  yq e ".config.modelServiceVersion = \"$TAG\"" -i helm_chart/values.yaml
+  # Update tags using 
   yq e ".app.v1.image.tag = \"$LATEST_TAG\"" -i helm_chart/values.yaml
   yq e ".app.v2.image.tag = \"$PREV_TAG\"" -i helm_chart/values.yaml
   yq e ".modelService.image.tag = \"$TAG\"" -i helm_chart/values.yaml
