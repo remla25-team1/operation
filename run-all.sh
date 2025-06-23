@@ -43,9 +43,16 @@ step3_migrate() {
     echo "Error: No vX.X.X tags found in the repository."
     exit 1
   elif [ "${#TAGS[@]}" -eq 1 ]; then
+    # strip the 'v' prefix from the tag
+    TAGS[0]="${TAGS[0]#v}"
+    # if only one tag is found, use it for both v1 and v2
     LATEST_TAG="${TAGS[0]}"
     PREV_TAG="${TAGS[0]}"
   else
+    # strip the 'v' prefix from the tags
+    TAGS[0]="${TAGS[0]#v}"
+    TAGS[1]="${TAGS[1]#v}"
+    # use the first tag as the latest and the second as the previous
     LATEST_TAG="${TAGS[0]}"
     PREV_TAG="${TAGS[1]}"
   fi
@@ -62,6 +69,9 @@ step3_migrate() {
     echo "Error: No vX.X.X tag found for model-service."
     exit 1
   fi
+  # strip the 'v' prefix from the tag
+  TAG="${TAG#v}"
+  echo "Using tag $TAG: for model-service"
 
   # Update tags using yq
   yq e ".app.v1.image.tag = \"$LATEST_TAG\"" -i helm_chart/values.yaml

@@ -118,7 +118,7 @@
         helm upgrade --install {{ helm_chart_name }} {{ helm_chart_path }}
         --namespace default
         --create-namespace
-        --wait --timeout=120s
+        --wait --timeout=300s
         --set image.tag={{ app_image_tag | default('latest') }} 
       become_user: vagrant
       environment:
