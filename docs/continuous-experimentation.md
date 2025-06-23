@@ -10,7 +10,14 @@ We hypothesize that `v2 (0.0.6-pre-20250617-003)` will have a lower average `sen
 - Both versions are deployed using separate Deployments (v1 and v2).
     - v1: [`ghcr.io/remla25-team1/app:0.0.6-pre-20250622-001`](https://github.com/remla25-team1/app/releases/tag/v0.0.6-pre-20250622-001)
     - v2: [`ghcr.io/remla25-team1/app:0.0.6-pre-20250617-003`](https://github.com/remla25-team1/app/releases/tag/v0.0.6-pre-20250617-003)
-- Istio VirtualService routes 90% of traffic to `v1`, and 10% to `v2`.
+- Istio VirtualService routes 90% of traffic to `v1`.
+
+![traffic-v1](images/traffic-v1.png)
+
+And 10% to `v2`.
+
+![traffic-v2](images/traffic-v2.png)
+
 - Prometheus scrapes app-specific metrics, and Grafana visualizes latency distribution.
 
 
