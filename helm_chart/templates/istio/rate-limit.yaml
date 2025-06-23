@@ -9,7 +9,6 @@ spec:
     labels:
       istio: {{ .Values.rateLimit.selector.istio }}
   configPatches:
-  # ---------Canary traffic ---------------------------------------------------------------- #
     - applyTo: HTTP_FILTER
       match:
         context: GATEWAY
@@ -24,8 +23,8 @@ spec:
           vhost:
             route:
               headers:
-                - name: "user-group"
-                  exact_match: "canary"
+                - name: "x-forwarded-for"
+                  exact_match: true
       patch:
         operation: INSERT_BEFORE
         value:
@@ -56,50 +55,4 @@ spec:
                     value: {{ .Values.rateLimit.responseHeader.value | quote }}
               local_reply_config:
                 status_code: 429
-  # ---------Normal user group ------------------------------------------------------------- #
-    - applyTo: HTTP_FILTER
-      match:
-        context: GATEWAY
-        listener:
-          portNumber: {{ .Values.rateLimit.portNumber }}
-          filterChain:
-            filter:
-              name: "envoy.filters.network.http_connection_manager"
-              subFilter:
-                name: "envoy.filters.http.router"
-          routeConfiguration:
-          vhost:
-            route:
-              headers:
-                - name: "user-group"
-                  exact_match: false
-      patch:
-        operation: INSERT_BEFORE
-        value:
-          name: envoy.filters.http.local_ratelimit
-          typed_config:
-            "@type": type.googleapis.com/udpa.type.v1.TypedStruct
-            type_url: type.googleapis.com/envoy.extensions.filters.http.local_ratelimit.v3.LocalRateLimit
-            value:
-              stat_prefix: {{ printf "%s-%s" .Release.Name .Values.rateLimit.statPrefix }}
-              token_bucket:
-                max_tokens: {{ .Values.rateLimit.maxTokens }}
-                tokens_per_fill: {{ .Values.rateLimit.tokensPerFill }}
-                fill_interval: {{ .Values.rateLimit.fillInterval }}
-              filter_enabled:
-                runtime_key: {{ .Values.rateLimit.runtimeKeys.enabled }}
-                default_value:
-                  numerator: {{ .Values.rateLimit.defaultValue.numerator }}
-                  denominator: {{ .Values.rateLimit.defaultValue.denominator }}
-              filter_enforced:
-                runtime_key: {{ .Values.rateLimit.runtimeKeys.enforced }}
-                default_value:
-                  numerator: {{ .Values.rateLimit.defaultValue.numerator }}
-                  denominator: {{ .Values.rateLimit.defaultValue.denominator }}
-              response_headers_to_add:
-                - append: false
-                  header:
-                    key: {{ .Values.rateLimit.responseHeader.key }}
-                    value: {{ .Values.rateLimit.responseHeader.value | quote }}
-              local_reply_config:
-                status_code: 429
+  

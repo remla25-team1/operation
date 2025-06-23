@@ -132,6 +132,7 @@ ingress:
   # Any annotations you need
   annotations:
     nginx.ingress.kubernetes.io/rewrite-target: "/"
+    nginx.ingress.kubernetes.io/use-forwarded-headers: "true"
   # One or more host rules
   hosts:
     - host: app.local
