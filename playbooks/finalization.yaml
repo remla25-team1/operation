@@ -267,6 +267,7 @@
                           name: kubernetes-dashboard-kong-proxy
                           port:
                             number: 443      
+      ignore_errors: true
 
     # Step 23: Install Istio 
     - name: Set Istio architecture variable

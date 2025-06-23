@@ -29,6 +29,76 @@ step3_migrate() {
   read -s -p "GitHub Personal Access Token: " GITHUB_PAT
   echo
   read -p "GitHub email: " GITHUB_EMAIL
+  echo "Using GitHub credentials for migration: $GITHUB_USERNAME, $GITHUB_EMAIL"
+  echo
+
+  # Fetch the two most recent tags matching vX.X.X
+  TAGS=($(curl -s https://api.github.com/repos/remla25-team1/app/releases \
+    | grep -oE '"tag_name":\s*"v[0-9]+\.[0-9]+\.[0-9]+"' \
+    | cut -d '"' -f4 \
+    | sort -Vr \
+    | head -n 2))
+
+  if [ "${#TAGS[@]}" -eq 0 ]; then
+    echo "Error: No vX.X.X tags found in the repository."
+    exit 1
+  elif [ "${#TAGS[@]}" -eq 1 ]; then
+    # strip the 'v' prefix from the tag
+    TAGS[0]="${TAGS[0]#v}"
+    # if only one tag is found, use it for both v1 and v2
+    LATEST_TAG="${TAGS[0]}"
+    PREV_TAG="${TAGS[0]}"
+  else
+    # strip the 'v' prefix from the tags
+    TAGS[0]="${TAGS[0]#v}"
+    TAGS[1]="${TAGS[1]#v}"
+    # use the first tag as the latest and the second as the previous
+    LATEST_TAG="${TAGS[0]}"
+    PREV_TAG="${TAGS[1]}"
+  fi
+
+  echo "Using v1 tag: $LATEST_TAG for app-v1"
+  echo "Using v2 tag: $PREV_TAG for app-v2"
+
+  TAG=($(curl -s https://api.github.com/repos/remla25-team1/model-service/releases \
+    | grep -oE '"tag_name":\s*"v[0-9]+\.[0-9]+\.[0-9]+"' \
+    | head -n 1 \
+    | cut -d '"' -f4))
+  
+  if [ -z "$TAG" ]; then
+    echo "Error: No vX.X.X tag found for model-service."
+    exit 1
+  fi
+  # strip the 'v' prefix from the tag
+  TAG="${TAG#v}"
+  echo "Using tag $TAG: for model-service"
+
+  # Update tags in values.yaml under config:
+  yq e ".config.appVersionV1 = \"$LATEST_TAG\"" -i helm_chart/values.yaml
+  yq e ".config.appVersionV2 = \"$PREV_TAG\"" -i helm_chart/values.yaml
+  yq e ".config.modelServiceVersion = \"$TAG\"" -i helm_chart/values.yaml
+  # Update tags using 
+  yq e ".app.v1.image.tag = \"$LATEST_TAG\"" -i helm_chart/values.yaml
+  yq e ".app.v2.image.tag = \"$PREV_TAG\"" -i helm_chart/values.yaml
+  yq e ".modelService.image.tag = \"$TAG\"" -i helm_chart/values.yaml
+
+  echo "Set app v1 tag to $LATEST_TAG, app v2 tag to $PREV_TAG, model-service tag to $TAG in values.yaml"
+
+
+  # Update .env file for docker-compose
+  # ──────────────────────────────────────────────────────────────────────────────
+  echo "Updating .env with latest tags ($LATEST_TAG, $TAG)..."
+
+  # backup old .env
+  cp .env .env.bak
+
+  # set both variables to the new latest tag
+  sed -i -E "s#^APP_SERVICE_VERSION=.*#APP_SERVICE_VERSION=${LATEST_TAG}#" .env
+  sed -i -E "s#^MODEL_SERVICE_VERSION=.*#MODEL_SERVICE_VERSION=${TAG}#" .env
+
+  echo ".env updated:"
+  grep -E '^(APP_SERVICE_VERSION|MODEL_SERVICE_VERSION)' .env
+
 
   echo "-> [Step 4] ansible-playbook migrate.yaml"
   ansible-playbook \
@@ -48,23 +118,22 @@ step4_export_kubeconfig() {
   echo
   echo " export KUBECONFIG=\"\$(pwd)/kubeconfig-vagrant\""
   echo
-  echo "This step cannot be applied permanently from inside the script."
-  echo
   echo "You can find the app frontend at:"
-  echo " http://http://192.168.56.91"
+  echo " http://192.168.56.91"
   echo
   echo "✅ Script completed successfully."
   rm -f "$STATE_FILE"
 }
 
-
 # ──────────────────────────────────────────────────────────────────────────────
 if [[ -f "$STATE_FILE" ]]; then
   START_AT=$(<"$STATE_FILE")
   echo -e "State file found; resuming from step $START_AT (recorded in $STATE_FILE).\nIf you wish to run the script from start, remove the shell state file and try again."
+  echo
 else
   START_AT=1
   echo "No state file found; starting at step 1"
+  echo
 fi
 
 # ──────────────────────────────────────────────────────────────────────────────

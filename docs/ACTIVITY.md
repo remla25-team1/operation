@@ -242,9 +242,9 @@ Approved PR: https://github.com/remla25-team1/operation/pull/23 (related to A1 +
 
 # Week 10
 ### -- Anna: --
-Created PR: 
+Created PR: https://github.com/remla25-team1/operation/pull/28 (related to A5)
 
-Approved PR: 
+Approved PR: https://github.com/remla25-team1/app/pull/9 (related to A1/app logic)
 
 ### -- Sofia: --
 Created PR: 
