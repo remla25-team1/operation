@@ -93,7 +93,18 @@ chmod +x run-all.sh
 ```
 
 
-This will set up all services. The script takes a good while to run, so take your time. During step 3 of the process (indicated in the terminal), you will be asked for your Github username, PAT token, and Github email address. This is so that you can pull the latest images to deploy on the cluster. Set up a `imagePullSecrets` for GHCR: first generate a new token (classic) on Github. Give it scopes `read:packages, repo`. Copy the token and paste it in the PAT token space. You will be asked for your `BECOME` password. This is so that the playbook can run commands in `sudo` mode. Simply fill in your host password here.
+This will set up all services. The script takes a good while to run, so take your time. 
+
+##### PAT token access
+During step 3 of the process (indicated in the terminal), you will be asked for your Github username, PAT token, and Github email address. This is so that you can pull the latest images to deploy on the cluster. Set up a `imagePullSecrets` for GHCR: first generate a new token (classic) on Github. Give it scopes `read:packages, repo, org:read`. Copy the token and paste it in the PAT token space. Note: you will need to request access to the organization before you can pull build images like this.
+
+Alternatively, you can use our bot-account to run the cluster. During step 3, use the following credentials:
+- Github username: **remla-git-bot**
+- Github email: anna.visman@gmail.com (will be swapped for a different email in the future)
+- PAT token: **please contact the organization owner to receive this token**
+
+##### BECOME password
+Afterwards, you will be asked for your `BECOME` password. This is so that the playbook can run commands in `sudo` mode. Simply fill in your host password here.
 
 At the end of the script, you will be asked to execute the following command, so that you can execute ```kubectl``` commands in the terminal:
 ```bash
