@@ -60,8 +60,6 @@ step3_migrate() {
     PREV_TAG="${TAGS[1]}"
   fi
 
-  echo "Using v1 tag: $LATEST_TAG for app-v1"
-  echo "Using v2 tag: $PREV_TAG for app-v2"
 
   TAG=($(curl -s https://api.github.com/repos/remla25-team1/model-service/releases \
     | grep -oE '"tag_name":\s*"v[0-9]+\.[0-9]+\.[0-9]+"' \
@@ -74,8 +72,7 @@ step3_migrate() {
   fi
   # strip the 'v' prefix from the tag
   TAG="${TAG#v}"
-  echo "Using tag $TAG: for model-service"
-
+  
   # Update tags in values.yaml under config:
   yq e ".config.appVersionV1 = \"$LATEST_TAG\"" -i helm_chart/values.yaml
   yq e ".config.appVersionV2 = \"$PREV_TAG\"" -i helm_chart/values.yaml
