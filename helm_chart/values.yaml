@@ -1,10 +1,11 @@
 # ─────────────────────────────────────────────────────────────────────────────
 config:
   # App config
-  appVersionV1: "0.0.6-pre-20250617-001"
+  appVersionV1: "0.0.6-pre-20250622-001"
   appVersionV2: "0.0.6-pre-20250617-003"
   modelServiceVersion: "latest"
-  port: "8080"
+  modelVersion: "v0.1.0"
+  port:             "8080"
   # Model-service config
   modelServiceHost: "model-service"
   modelServicePort: "8081"
@@ -206,6 +207,7 @@ prometheus:
     serviceMonitorNamespaceSelector: {}
     ruleSelector: {}
     ruleNamespaceSelector: {}
+    scrapeInterval: "2s"
 # ─────────────────────────────────────────────────────────────────────────────
 monitoring:
   enabled: true
