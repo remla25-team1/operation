@@ -11,7 +11,7 @@ WRK_PLAYBOOKS = ["playbooks/general.yaml", "playbooks/node.yaml"]
 Vagrant.configure("2") do |config|
   config.vm.box = "bento/ubuntu-24.04"
    
-  # error fix
+  # DNS/sudo fix
   config.vm.provision "shell", privileged: true, inline: <<-SHELL
     echo "Fixing DNS..."
     rm -f /etc/resolv.conf
