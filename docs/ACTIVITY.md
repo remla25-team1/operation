@@ -254,7 +254,7 @@ Approved PR:
 ### -- Vivian: --
 Created PR: 
 
-Approved PR: 
+Approved PR: https://github.com/remla25-team1/operation/pull/26 (related to A2)
 
 ### -- Yifan: --
 Created PR: 
