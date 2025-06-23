@@ -1,9 +1,9 @@
 # ─────────────────────────────────────────────────────────────────────────────
 config:
   # App config
-  appVersionV1: "0.0.6-pre-20250622-001"
-  appVersionV2: "0.0.6-pre-20250617-003"
-  modelServiceVersion: "latest"
+  appVersionV1: "0.0.7"
+  appVersionV2: "0.0.2"
+  modelServiceVersion: "0.0.8"
   modelVersion: "v0.1.0"
   port: "8080"
   # Model-service config
