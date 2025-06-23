@@ -1,7 +1,7 @@
 # ─────────────────────────────────────────────────────────────────────────────
 config:
   # App config
-  appVersionV1: "0.0.6-pre-20250617-001"
+  appVersionV1: "0.0.6-pre-20250622-001"
   appVersionV2: "0.0.6-pre-20250617-003"
   modelServiceVersion: "latest"
   modelVersion: "v0.1.0"
@@ -45,7 +45,7 @@ app:
 
     # Image tag for v1
     image:
-      tag: "0.0.6-pre-20250617-001" # change this to latest?
+      tag: "0.0.6-pre-20250622-001" # change this to latest?
 
     # NodeSelector constraints for v1
     nodeSelector:
@@ -245,6 +245,7 @@ prometheus:
     serviceMonitorNamespaceSelector: {}
     ruleSelector: {}
     ruleNamespaceSelector: {}
+    scrapeInterval: "2s"
 # ─────────────────────────────────────────────────────────────────────────────
 monitoring:
   enabled: true
