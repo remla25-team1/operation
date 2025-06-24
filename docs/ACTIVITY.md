@@ -252,7 +252,7 @@ Created PR:
 Approved PR: 
 
 ### -- Vivian: --
-Created PR: 
+Created PR: https://github.com/remla25-team1/model-training/pull/14 (related to A1)
 
 Approved PR: https://github.com/remla25-team1/operation/pull/26 (related to A2)
 
