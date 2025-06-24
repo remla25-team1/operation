@@ -114,7 +114,8 @@
           --set controller.service.loadBalancerIP={{ cluster_network }}.90
       environment:
         KUBECONFIG: /etc/kubernetes/admin.conf
-
+          
+   
     # Step 22: Install Kubernetes Dashboard
     - name: Add kubernetes-dashboard Helm repo
       ansible.builtin.shell: helm repo add kubernetes-dashboard https://kubernetes.github.io/dashboard/
@@ -126,11 +127,7 @@
       ansible.builtin.shell: |
         helm upgrade --install kubernetes-dashboard kubernetes-dashboard/kubernetes-dashboard \
           --namespace kubernetes-dashboard --create-namespace \
-          --set ingress.enabled=true \
-          --set ingress.ingressClassName=nginx \
-          --set ingress.hosts[0].host=dashboard.local \
-          --set ingress.hosts[0].paths[0].path="/" \
-          --set ingress.hosts[0].paths[0].pathType=Prefix
+          --set ingress.enabled=false 
       environment:
         KUBECONFIG: /etc/kubernetes/admin.conf
         
@@ -179,7 +176,98 @@
 
     - name: Show the Dashboard login token
       debug:
-        msg: "{{ dash_token.stdout }}"
+        msg: "{{ dash_token.stdout }}"  
+
+
+      # Generate self-signed TLS certificate for ingress-nginx
+    - name: Create directory for TLS certs
+      file:
+        path: /etc/dashboard-tls/ 
+        state: directory
+        mode: '0755'
+
+    - name: Generate private key for ingress-nginx
+      community.crypto.openssl_privatekey:
+        path: /etc/dashboard-tls/dashboard.key
+        size: 2048
+        type: RSA
+      run_once: true  
+
+    - name: Generate CSR with CN=dashboard.local
+      community.crypto.openssl_csr:
+        path: /etc/dashboard-tls/dashboard.csr
+        privatekey_path: /etc/dashboard-tls/dashboard.key
+        common_name: dashboard.local
+        subject_alt_name: "DNS:dashboard.local"
+      run_once: true
+  
+
+    - name: Sign self-signed certificate from CSR
+      community.crypto.x509_certificate:
+        path: /etc/dashboard-tls/dashboard.crt
+        csr_path: /etc/dashboard-tls/dashboard.csr
+        privatekey_path: /etc/dashboard-tls/dashboard.key
+        provider: selfsigned
+      run_once: true
+
+    - name: Read TLS cert from remote host
+      slurp:
+        src: /etc/dashboard-tls/dashboard.crt
+      register: dashboard_crt
+      run_once: true
+
+    - name: Read TLS key from remote host
+      slurp:
+        src: /etc/dashboard-tls/dashboard.key
+      register: dashboard_key
+      run_once: true
+
+
+    - name: Create TLS Secret for dashboard
+      kubernetes.core.k8s:
+        kubeconfig: /etc/kubernetes/admin.conf
+        state: present
+        definition:
+          apiVersion: v1
+          kind: Secret
+          metadata:
+            name: dashboard-tls
+            namespace: kubernetes-dashboard
+          type: kubernetes.io/tls
+          data:
+            tls.crt: "{{ dashboard_crt.content }}"
+            tls.key: "{{ dashboard_key.content }}"
+      run_once: true       
+
+    - name: Expose Dashboard through Ingress
+      kubernetes.core.k8s:
+        kubeconfig: /etc/kubernetes/admin.conf
+        state: present
+        definition:
+          apiVersion: networking.k8s.io/v1
+          kind: Ingress
+          metadata:
+            name: kubernetes-dashboard-ingress
+            namespace: kubernetes-dashboard
+            annotations:
+              nginx.ingress.kubernetes.io/backend-protocol: "HTTPS"
+          spec:
+            ingressClassName: nginx
+            tls:
+              - hosts: ["dashboard.local"]
+                secretName: dashboard-tls
+            rules:
+              - host: dashboard.local
+                http:
+                  paths:
+                    - path: /
+                      pathType: Prefix
+                      backend:
+                        service:
+                          name: kubernetes-dashboard-kong-proxy
+                          port:
+                            number: 443      
+      ignore_errors: true
 
     # Step 23: Install Istio 
     - name: Set Istio architecture variable

@@ -118,11 +118,12 @@
         helm upgrade --install {{ helm_chart_name }} {{ helm_chart_path }}
         --namespace default
         --create-namespace
-        --wait --timeout=120s
+        --wait --timeout=300s
         --set image.tag={{ app_image_tag | default('latest') }} 
       become_user: vagrant
       environment:
         KUBECONFIG: /home/vagrant/.kube/config
+      ignore_errors: true  
  
 
     - name: Fetch kubeconfig for local use
@@ -134,7 +135,7 @@
       become_user: vagrant
 
     - name: Wait for pods to be ready
-      command: kubectl wait --namespace default --for=condition=Ready pods --all --timeout=120s
+      command: kubectl wait --namespace default --for=condition=Ready pods --all --timeout=300s
       environment:
         KUBECONFIG: /home/vagrant/.kube/config
 
