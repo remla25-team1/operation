@@ -1,4 +1,5 @@
 # Local rate limiting using Envoy's built-in filter
+{{- if .Values.rateLimit.enabled}}
 apiVersion: networking.istio.io/v1alpha3
 kind: EnvoyFilter
 metadata:
@@ -9,6 +10,8 @@ spec:
     labels:
       istio: {{ .Values.rateLimit.selector.istio }}
   configPatches:
+
+    # Get source IP 
     - applyTo: HTTP_FILTER
       match:
         context: GATEWAY
@@ -19,14 +22,32 @@ spec:
               name: "envoy.filters.network.http_connection_manager"
               subFilter:
                 name: "envoy.filters.http.router"
-          routeConfiguration:
-          vhost:
-            route:
-              headers:
-                - name: "x-forwarded-for"
-                  exact_match: true
       patch:
         operation: INSERT_BEFORE
+        value:
+          name: envoy.filters.http.lua
+          typed_config:
+            "@type": type.googleapis.com/envoy.extensions.filters.http.lua.v3.Lua 
+            inline code: |
+              function envoy_on_request(request_handle)
+                -- Extract the source IP and add it as a header for rate limiting
+                local headers = request_handle:headers()
+                local source_ip = request_handle:streamInfo():downstreamRemoteAddress():ip()
+                headers:add("x-user-ip", source_ip)
+              end
+    
+    # Actually apply local rate limiter
+    - applyTo: HTTP_FILTER
+      match:
+        context: GATEWAY
+        listener:
+          filterChain:
+            filter:
+              name: "envoy.filters.network.http_connection_manager"
+              subFilter:
+                name: "envoy.filters.http.lua"
+      patch:
+        operation: INSERT_AFTER
         value:
           name: envoy.filters.http.local_ratelimit
           typed_config:
@@ -48,11 +69,27 @@ spec:
                 default_value:
                   numerator: {{ .Values.rateLimit.defaultValue.numerator }}
                   denominator: {{ .Values.rateLimit.defaultValue.denominator }}
+              
+              # Seperate rate limiter per IP
+              descriptors:
+                - entries:
+                    - key: "user_ip"
+                      request_headers:
+                        header_name: "x-user-ip"
+                        descriptor_key: "user_ip"
+                  token_bucket:
+                    max_tokens: {{ .Values.rateLimit.requestsPerMinute }}
+                    tokens_per_fill: {{ .Values.rateLimit.requestsPerMinute }}
+                    fill_interval: {{ .Values.rateLimit.fillInterval }}}
+
               response_headers_to_add:
                 - append: false
                   header:
                     key: {{ .Values.rateLimit.responseHeader.key }}
                     value: {{ .Values.rateLimit.responseHeader.value | quote }}
+
               local_reply_config:
                 status_code: 429
+
+{{- end }}
   
