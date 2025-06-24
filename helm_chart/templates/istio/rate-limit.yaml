@@ -80,7 +80,7 @@ spec:
                   token_bucket:
                     max_tokens: {{ .Values.rateLimit.requestsPerMinute }}
                     tokens_per_fill: {{ .Values.rateLimit.requestsPerMinute }}
-                    fill_interval: {{ .Values.rateLimit.fillInterval }}}
+                    fill_interval: {{ .Values.rateLimit.fillInterval }}
 
               response_headers_to_add:
                 - append: false
