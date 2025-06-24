@@ -11,6 +11,10 @@ data:
   # Model-service config
   MODEL_SERVICE_HOST: {{ printf "%s-%s" $.Release.Name $.Values.config.modelServiceHost }}
   MODEL_SERVICE_PORT: "{{ .Values.config.modelServicePort }}"
+
+  # Redis config
+  REDIS_HOST:         "{{ .Release.Name }}-redis"
+  REDIS_PORT:         "6379"
   
   # Listener
   HOST:              "{{ .Values.config.host }}"

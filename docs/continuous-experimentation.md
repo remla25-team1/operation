@@ -90,4 +90,5 @@ Its overall average response time is much lower than `0.0.6-pre-20250622-001` (`
 
 Thus, We choose version `0.0.6-pre-20250617-003` for deployment, as it provides much faster responses.
 
+Therefore, the latest version of our APP is [`ghcr.io/remla25-team1/app:0.0.10`](https://github.com/orgs/remla25-team1/packages/container/package/app)
 
