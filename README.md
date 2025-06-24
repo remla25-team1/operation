@@ -313,6 +313,10 @@ done
 curl -H "user-group: canary" http://<INGRESS_IP>/
 ```
 
+### Extra Use Case for Istio
+We implemented local rate limiting, so each individual client can make up to 100 requests per minute. This is to prevent hogging of the network by an individual client. 
+
+
 ---
 
 ## Running the App with Docker Compose
@@ -348,3 +352,5 @@ docker compose down
 # or
 docker-compose down
 ```
+
+

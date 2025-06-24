@@ -270,8 +270,8 @@ rateLimit:
     istio: ingressgateway
     portNumber: 80
   statPrefix: http_local_rate_limiter
-  maxTokens: 10
-  tokensPerFill: 10
+  maxTokens: 100
+  tokensPerFill: 100
   fillInterval: 60s
   runtimeKeys:
     enabled: local_rate_limit_enabled
