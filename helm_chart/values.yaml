@@ -1,8 +1,9 @@
 # ─────────────────────────────────────────────────────────────────────────────
 config:
   # App config
-  appVersionV1: "0.0.7"
-  appVersionV2: "0.0.2"
+  appVersionV1: "0.0.8"
+  appVersionV2: "0.0.7"
+  
   modelServiceVersion: "0.0.8"
   modelVersion: "v0.1.0"
   port: "8080"
@@ -36,7 +37,7 @@ app:
     replicaCount: 1
     # Image tag for v1
     image:
-      tag: "0.0.7"
+      tag: "0.0.8"
     # NodeSelector constraints for v1
     nodeSelector:
       role: app
@@ -53,7 +54,7 @@ app:
     replicaCount: 1
     # Image tag for v2
     image:
-      tag: "0.0.2"
+      tag: "0.0.7"
     # NodeSelector constraints for v2
     nodeSelector:
       role: app

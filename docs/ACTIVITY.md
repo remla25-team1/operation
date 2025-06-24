@@ -249,10 +249,10 @@ Approved PR: https://github.com/remla25-team1/app/pull/9 (related to A1/app logi
 ### -- Sofia: --
 Created PR: 
 
-Approved PR: 
+Approved PR: https://github.com/remla25-team1/model-training/pull/14 (related to A1)
 
 ### -- Vivian: --
-Created PR: 
+Created PR: https://github.com/remla25-team1/model-training/pull/14 (related to A1)
 
 Approved PR: https://github.com/remla25-team1/operation/pull/26 (related to A2)
 
