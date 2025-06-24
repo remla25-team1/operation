@@ -19,6 +19,12 @@ spec:
               name: "envoy.filters.network.http_connection_manager"
               subFilter:
                 name: "envoy.filters.http.router"
+          routeConfiguration:
+          vhost:
+            route:
+              headers:
+                - name: "x-forwarded-for"
+                  exact_match: true
       patch:
         operation: INSERT_BEFORE
         value:
@@ -49,9 +55,3 @@ spec:
                     value: {{ .Values.rateLimit.responseHeader.value | quote }}
               local_reply_config:
                 status_code: 429
-              # descriptors:
-              #   - entries:
-              #       - key: remote_address
-              #         value: "%DOWNSTREAM_REMOTE_ADDRESS_WITHOUT_PORT%"
-
-

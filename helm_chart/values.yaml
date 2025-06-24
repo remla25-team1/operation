@@ -3,6 +3,7 @@ config:
   # App config
   appVersionV1: "0.0.8"
   appVersionV2: "0.0.7"
+  
   modelServiceVersion: "0.0.8"
   modelVersion: "v0.1.0"
   port: "8080"
@@ -132,6 +133,7 @@ ingress:
   # Any annotations you need
   annotations:
     nginx.ingress.kubernetes.io/rewrite-target: "/"
+    nginx.ingress.kubernetes.io/use-forwarded-headers: "true"
   # One or more host rules
   hosts:
     - host: app.local
