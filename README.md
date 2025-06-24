@@ -34,21 +34,16 @@ Our application features a simple interface where users can enter a tweet to ana
 
 ### Example Screenshots
 
-#### 1. Negative Comment 
-![alt text](cases/negative.png)
-[Original tweet available here](https://x.com/JtheCat3/status/1864351776868094126)
+#### 1. Prediction 
+![alt text](docs/images/positive.png)
 
-#### 2. Positive Comment
-![alt text](cases/positive.png)
-[Original tweet available here](https://x.com/TinuKuye/status/1719440898696630564)
 
-#### 3. Correct Predictions
-![alt text](cases/correction.png)
-[Original tweet available here](https://x.com/TinuKuye/status/1719440898696630564)
+#### 2. Correction
+![alt text](docs/images/negative.png)
 
 ---
 
-## Setup
+## Setup Instruction
 
 ### 1. Install Required Tools
 
@@ -85,7 +80,7 @@ cp ~/.ssh/id_rsa.pub ssh_keys/id_rsa.pub
 
 ---
 
-## Running Application on Kubernetes Cluster
+### Running Application on Kubernetes Cluster
 
 Navigate into ```operation``` dir and run the commands below:
 ```bash
@@ -129,7 +124,35 @@ chmod +x cleanup.sh
 ./cleanup.sh
 ```
 
-### Useful Commands
+### Accessing the Kubernetes Dashboard
+
+To access the dashboard using the `dashboard.local` domain, you need to map its fixed IP address in your local hosts file.
+
+Add the following line to your `/etc/hosts` file (this requires administrator/sudo privileges):
+
+```
+192.168.56.90 dashboard.local
+```
+*(Note: On macOS or Linux, the file is at `/etc/hosts`. On Windows, it's at `C:\Windows\System32\drivers\etc\hosts`.)*
+
+Navigate to the following URL in your web browser:
+
+[https://dashboard.local](https://dashboard.local)
+
+
+To log in, you need an authentication token. Run the following command in your terminal (where you have `KUBECONFIG` set up) to generate a token for the `admin-user`:
+
+```bash
+kubectl -n kubernetes-dashboard create token admin-user
+```
+Copy the entire token output from the command above to login.
+
+Then you should see the following dashboard.
+![Kubernetes Dashboard Login](docs/images/k8s-dashboard.png)
+
+
+
+#### Useful Commands
 
 These commands can help you debug, manage, and restart your application components more effectively during development or deployment.
 
@@ -179,9 +202,9 @@ kubectl get pods -o wide
 
 ---
 
-## Verify Prometheus Setup
+### Verify Prometheus Setup
 
-### 1. Access the Prometheus Web UI
+#### 1. Access the Prometheus Web UI
 ```sh
 kubectl port-forward -n monitoring svc/prometheus-kube-prometheus-prometheus 9090:9090
 ```
@@ -194,7 +217,7 @@ To verify that your metrics endpoints are being scraped:
 - Look for your application's Service name or Pod name in the targets list
 - Check the status (should be "UP")
 
-### 2. Test if Metrics Endpoint is Reachable from Inside the Cluster
+#### 2. Test if Metrics Endpoint is Reachable from Inside the Cluster
 
 ```sh
 kubectl port-forward svc/sentiment-app-app 8080:8080
@@ -204,9 +227,9 @@ curl http://localhost:8080/metrics
 
 ---
 
-## Test Alerting Capabilities 
+### Test Alerting Capabilities 
 
-### 1. Create a Kubernetes Secret for SMTP Credentials
+#### 1. Create a Kubernetes Secret for SMTP Credentials
 
 Use the following command to create a secret containing fake (or real, for production) SMTP credentials.
 
@@ -217,7 +240,7 @@ kubectl create secret generic alertmanager-smtp-secret \
   -n monitoring
 ```
 
-### 2. Re-deploy the Application 
+#### 2. Re-deploy the Application 
 
 Re-run the deployment to apply changes, including alerting configuration:
 ```bash
@@ -225,7 +248,7 @@ Re-run the deployment to apply changes, including alerting configuration:
 ```
 This ensures that Alertmanager picks up the config and mounts the secret properly.
 
-### 3. Access Prometheus and Locate the Alert
+#### 3. Access Prometheus and Locate the Alert
 
 Forward Prometheus to your local machine:
 ```sh
@@ -237,7 +260,7 @@ Then open your browser and visit:
 
 Look for the custom alert "HighRequestRate" in the list. If it's correctly configured and active, it will appear as Inactive, Pending or Firing.
 
-### 4. Trigger the Alert by Generating Traffic
+#### 4. Trigger the Alert by Generating Traffic
 
 To exceed the alert threshold, simulate traffic:
 ```bash
@@ -245,7 +268,7 @@ while true; do curl -s http://192.168.56.91:80/; sleep 0.1; done
 ```
 This generates approximately 10 requests per second, which is well above the threshold.
 
-### 5. Verify Alert Status
+#### 5. Verify Alert Status
 
 In the Prometheus UI under **Alerts**, verify that the alert transitions from **Pending** to **Firing** after approximately 2m. 
 
@@ -260,43 +283,50 @@ You should see the alert listed there.
 
 ---
 
-## Grafana 
+### Grafana 
 
-We provide a pre-configured dashboard for monitoring with 4 pannels:
+We provide a pre-configured Grafana dashboard for monitoring. 
 
-- Request count by sentiment (sentiment_requests_total)
+#### 1. Accessing Grafana
 
-- Average response time (sentiment_response_time_seconds)
+To access the Grafana interface locally, run the following port-forward command:
 
-- Correction submission stats (correction_requests_total)
-
-- In-progress requests (sentiment_requests_in_progress)
-
-### Auto-load via ConfigMap 
-(Not available yet.)
 ```bash
-kubectl apply -f dashboard/tweet-sentiment-dashboard-configmap.yaml
+kubectl port-forward svc/prometheus-grafana -n monitoring 3000:80
 ```
 
-### Import the Dashboard Manually 
-- Open Grafana 
-   - Access to grafana:
-      ```bash
-      kubectl port-forward svc/prometheus-grafana -n monitoring 3000:80
-      ```
-      - Then open: http://localhost:3000
-      - Username: admin
-      - Password: prom-operator
-      
-- Go to Dashboards → Import
+Then, open your browser and visit: [http://localhost:3000](http://localhost:3000)
 
-- Upload: monitoring/tweet-sentiment-dashboard.json (Not available yet. You need to create view)
+- **Username:** `admin`
+- **Password:** `prom-operator`
 
-- Select Prometheus as data source, click Import
+#### 2. Exploring the Dashboard
+
+The `sentiment-app` dashboard is automatically provisioned and available. You can find it by navigating to **Dashboards** in the left-hand menu.
+
+![Grafana Dashboard Screenshot](docs/images/grafana-dashboard.png)
+
+#### 3. Dashboard Panels Overview
+
+The dashboard includes several key panels to monitor application health and performance:
+
+- **AB Test:** Compares the average response times between different application versions.
+- **Sentiment Response Time:** Displays the average latency for `/sentiment` requests, broken down by data source (`model` or `cache`).
+- **User Correction Rate:** Shows the percentage of predictions that users have corrected, with color-coded thresholds indicating model performance.
+- **Sentiment Requests In Progress:** A real-time gauge of the number of active `/sentiment` requests.
+- **Requests Under Latency Threshold:** Tracks the percentage of requests that meet a configurable performance goal (e.g., completed in under 0.2s).
+- **Sentiment Request Volume:** A time-series graph showing the total number of `/sentiment` requests.
+
+For a detailed breakdown of each panel, its purpose, and the underlying Prometheus queries, please see [grafana.md](docs/grafana.md).
+
 
 ---
 
-## Testing Istio
+### Traffic Management
+We managed to do a 90/10 routing of 2 kinds of apps.
+
+
+#### Testing Istio
 The cluster is configured with Istio in the ```migrate.yaml``` playbook which you ran above. To test the Istio traffic management functionality, you can try the following two tests:
 ```bash
 # find the INGRES-IP (external ip below)
@@ -313,9 +343,14 @@ done
 curl -H "user-group: canary" http://<INGRESS_IP>/
 ```
 
-### Extra Use Case for Istio
+### Additional Use Case for Istio
 We implemented local rate limiting, so each individual client can make up to 100 requests per minute. This is to prevent hogging of the network by an individual client. 
 
+### 👉 [Continuous Experiments](docs/continuous-experimentation.md)
+
+### 👉 [Deployment](docs/deployment.md)
+
+### 👉 [Extention Proposal](docs/extension.md)
 
 ---
 

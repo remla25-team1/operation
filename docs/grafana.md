@@ -19,19 +19,16 @@ In http://localhost:3000/dashboards, there is a dashboard called `sentiment-app`
 
 ### 1. **AB Test**
 ![ABtest](images/grafana-ABtest.png)
-- **Type:** Stat
 - **Description:**  
   Compares average response times between two app versions using Prometheus histogram metrics.
 - **Query Logic (Metrics):**  
 ```
 avg_response_time = rate(sum)/rate(count)
 ```
-
 ---
 
 ### 2. **Sentiment Response Time**
 ![sentiment-response-time](images/grafana-sentiment-response-time.png)
-- **Type:** Stat
 - **Grouped By:** `app_version`, `source` (`model` or `cache`)
 - **Description:**  
 Displays the average response time of `/sentiment` endpoint, separated by data source.  
@@ -41,7 +38,6 @@ Displays the average response time of `/sentiment` endpoint, separated by data s
 ---
 ### 3. **User Correction Rate**
 ![user-correction-rate](images/grafana-user-correction-rate.png)
-- **Type:** Gauge
 - **Description:**  
 Shows the rate of corrections submitted by users via the `/correction` endpoint.
 - **Calculation:**  
@@ -55,7 +51,6 @@ Shows the rate of corrections submitted by users via the `/correction` endpoint.
 
 ### 4. **Sentiment Requests In Progress**
 ![sentiment-requests-in-progress](images/grafana-in-progress.png)
-- **Type:** Gauge
 - **Description:**  
 Displays the number of in-progress `/sentiment` requests at scrape time.
 - **Note:**  
@@ -65,7 +60,6 @@ This is a snapshot metric; values are often `0` unless:
 ---
 ### 5. **Requests Under Latency Threshold**
 ![requests-under-lantency-threshold](images/grafana-latency-threshold.png)
-- **Type:** Stat
 - **Description:**  
 Shows percentage of requests completed under a configurable latency threshold (e.g., 0.1s).
 - **Configurable Variable:** `$le_threshold`
@@ -86,7 +80,6 @@ Use the dropdown at the top of the dashboard to change `$le_threshold`.
 
 ### 6. **Sentiment Request Volume**
 ![sentiment-request-volume](images/grafana-sentiment-request-volume.png)
-- **Type:** Timeseries
 - **Description:**  
 Count number of `/sentiment` requests grouped by `app_version`.
 

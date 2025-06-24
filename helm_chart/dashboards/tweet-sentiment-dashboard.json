@@ -75,7 +75,7 @@
       "targets": [
         {
           "editorMode": "code",
-          "expr": "sum by (app_version) (\n  rate(sentiment_response_time_seconds_sum{app_version=\"0.0.6-pre-20250617-001\"}[$__interval])\n)\n/\nsum by (app_version) (\n  rate(sentiment_response_time_seconds_count{app_version=\"0.0.6-pre-20250617-001\"}[$__interval])\n)",
+          "expr": "sum by (app_version) (\n  rate(sentiment_response_time_seconds_sum{app_version=\"0.0.9\"}[$__interval])\n)\n/\nsum by (app_version) (\n  rate(sentiment_response_time_seconds_count{app_version=\"0.0.9\"}[$__interval])\n)",
           "legendFormat": "__auto",
           "range": true,
           "refId": "A"
@@ -86,7 +86,7 @@
             "uid": "prometheus"
           },
           "editorMode": "code",
-          "expr": "sum by (app_version) (\n  rate(sentiment_response_time_seconds_sum{app_version=\"0.0.6-pre-20250617-003\"}[$__interval])\n)\n/\nsum by (app_version) (\n  rate(sentiment_response_time_seconds_count{app_version=\"0.0.6-pre-20250617-003\"}[$__interval])\n)",
+          "expr": "sum by (app_version) (\n  rate(sentiment_response_time_seconds_sum{app_version=\"0.0.10\"}[$__interval])\n)\n/\nsum by (app_version) (\n  rate(sentiment_response_time_seconds_count{app_version=\"0.0.10\"}[$__interval])\n)",
           "hide": false,
           "instant": false,
           "legendFormat": "__auto",
