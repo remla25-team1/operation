@@ -1,8 +1,8 @@
 # ─────────────────────────────────────────────────────────────────────────────
 config:
   # App config
-  appVersionV1: "0.0.8"
-  appVersionV2: "0.0.7"
+  appVersionV1: "0.0.10"
+  appVersionV2: "0.0.9"
   modelServiceVersion: "0.0.8"
   modelVersion: "v0.1.0"
   port: "8080"
@@ -25,7 +25,7 @@ app:
     targetPort: 8080
   # Shared Deployment configuration
   # ImagePullSecret for private registries
-  imagePullSecret: ghcr-secret
+  # imagePullSecret: ghcr-secret
   # Docker image (repository only; tag per-version below)
   image:
     repository: ghcr.io/remla25-team1/app
@@ -36,7 +36,7 @@ app:
     replicaCount: 1
     # Image tag for v1
     image:
-      tag: "0.0.8"
+      tag: "0.0.10"
     # NodeSelector constraints for v1
     nodeSelector:
       role: app
@@ -53,7 +53,7 @@ app:
     replicaCount: 1
     # Image tag for v2
     image:
-      tag: "0.0.7"
+      tag: "0.0.9"
     # NodeSelector constraints for v2
     nodeSelector:
       role: app
@@ -76,7 +76,7 @@ modelService:
   # number of replicas
   replicaCount: 1
   # pull secret for private registry (if needed)
-  imagePullSecret: ghcr-secret
+  # imagePullSecret: ghcr-secret
   # image repository and tag
   image:
     repository: ghcr.io/remla25-team1/model-service
