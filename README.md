@@ -360,22 +360,9 @@ We implemented local rate limiting, so each individual client can make up to 100
 
 ## Running the App with Docker Compose
 
-### 1. Clone All Repositories
-
-You can clone all required repositories for local development with the provided script:
-```bash
-chmod +x clone-all.sh
-./clone-all.sh
-```
-
-After cloning, switch to the **operation** repository:
-```bash
-cd operation
-```
-
 Make sure you have SSH access to all repositories (see SSH key setup in ...)
 
-### 2. Run the Application with Docker Compose
+### 1. Run the Application with Docker Compose
 
 From the root of the `operation` repository, build and start all services:
 ```bash
@@ -384,7 +371,7 @@ docker compose up --build
 docker-compose up --build
 ```
 
-### 3. Stop and Clean Up
+### 2. Stop and Clean Up
 To stop and remove the containers and associated resources, run the following command:
 ```bash
 docker compose down
