@@ -27,13 +27,7 @@ step2_finalize() {
 }
 
 step3_migrate() {
-  echo "-> [Step 3] prompt for GitHub credentials"
-  read -p "GitHub username: " GITHUB_USERNAME
-  read -s -p "GitHub Personal Access Token: " GITHUB_PAT
-  echo
-  read -p "GitHub email: " GITHUB_EMAIL
-  echo "Using GitHub credentials for migration: $GITHUB_USERNAME, $GITHUB_EMAIL"
-  echo
+  echo "-> [Step 3] update tags"
 
   # Fetch the two most recent tags matching vX.X.X
   TAGS=($(curl -s https://api.github.com/repos/remla25-team1/app/releases \
@@ -59,7 +53,6 @@ step3_migrate() {
     LATEST_TAG="${TAGS[0]}"
     PREV_TAG="${TAGS[1]}"
   fi
-
 
   TAG=($(curl -s https://api.github.com/repos/remla25-team1/model-service/releases \
     | grep -oE '"tag_name":\s*"v[0-9]+\.[0-9]+\.[0-9]+"' \
@@ -99,14 +92,10 @@ step3_migrate() {
   echo ".env updated:"
   grep -E '^(APP_SERVICE_VERSION|MODEL_SERVICE_VERSION)' .env
 
-
   echo "-> [Step 4] ansible-playbook migrate.yaml"
   ansible-playbook \
     -i shared/inventory.ini playbooks/migrate.yaml \
-    --ask-become-pass \
-    -e github_username="${GITHUB_USERNAME}" \
-    -e github_pat="${GITHUB_PAT}" \
-    -e github_email="${GITHUB_EMAIL}"
+    --ask-become-pass
   echo 5 > "$STATE_FILE"
   echo "Sleeping ${SLEEP_TIME}s…"; sleep "$SLEEP_TIME"
 }
