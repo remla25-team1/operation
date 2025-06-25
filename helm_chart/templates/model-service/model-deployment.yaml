@@ -14,8 +14,10 @@ spec:
       labels:
         app: {{ .Release.Name }}-model-service
     spec:
+      {{- if .Values.app.imagePullSecret }}
       imagePullSecrets:
-        - name: {{ .Values.modelService.imagePullSecret }}
+        - name: {{ .Values.app.imagePullSecret }}
+      {{- end }}
       nodeSelector:
         node-role: {{ .Values.modelService.nodeSelector.role }}
         kubernetes.io/hostname: {{ .Values.modelService.nodeSelector.hostname }}

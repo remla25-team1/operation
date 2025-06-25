@@ -16,18 +16,6 @@
         group: vagrant
         mode: "0600"
 
-    - name: Create GHCR secret
-      shell: >
-        kubectl create secret docker-registry ghcr-secret
-        --docker-server=ghcr.io
-        --docker-username={{ github_username }}
-        --docker-password={{ github_pat }}
-        --docker-email={{ github_email }}
-      environment:
-        KUBECONFIG: /home/vagrant/.kube/config
-      register: secret_out
-      failed_when: secret_out.rc not in [0,1]
-
     - name: Ensure istio-system namespace exists
       command: kubectl get ns istio-system
       register: istio_ns
@@ -40,10 +28,6 @@
       shell: kubectl label namespace default istio-injection=enabled --overwrite
       environment:
         KUBECONFIG: /home/vagrant/.kube/config
-
-    # - name: Update Helm repos
-    #   become_user: vagrant
-    #   command: helm repo update
 
     - name: Copy Helm chart to remote VM
       copy:

@@ -25,7 +25,7 @@ app:
     targetPort: 8080
   # Shared Deployment configuration
   # ImagePullSecret for private registries
-  imagePullSecret: ghcr-secret
+  # imagePullSecret: ghcr-secret
   # Docker image (repository only; tag per-version below)
   image:
     repository: ghcr.io/remla25-team1/app
@@ -76,7 +76,7 @@ modelService:
   # number of replicas
   replicaCount: 1
   # pull secret for private registry (if needed)
-  imagePullSecret: ghcr-secret
+  # imagePullSecret: ghcr-secret
   # image repository and tag
   image:
     repository: ghcr.io/remla25-team1/model-service
