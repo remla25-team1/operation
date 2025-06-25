@@ -360,4 +360,4 @@ docker compose down
 docker-compose down
 ```
 
-
+> Note: When starting the application with Docker Compose, you may see an error in the console related to `app.py`. This happens because the app container tries to connect to the model-service container before it is fully ready, resulting in a temporary connection error. This does not affect the overall functionality. Once all services are up, the application works as expected. We plan to address this startup timing issue in a future release.
