@@ -114,6 +114,20 @@
           --set controller.service.loadBalancerIP={{ cluster_network }}.90
       environment:
         KUBECONFIG: /etc/kubernetes/admin.conf
+
+    - name: Wait for NGINX Ingress controller pods to be Ready
+      command:
+        argv:
+          - kubectl
+          - wait
+          - --namespace
+          - ingress-nginx
+          - --for=condition=Ready
+          - pod
+          - --selector=app.kubernetes.io/component=controller
+          - --timeout=120s
+      environment:
+        KUBECONFIG: /etc/kubernetes/admin.conf
           
    
     # Step 22: Install Kubernetes Dashboard
