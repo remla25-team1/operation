@@ -17,8 +17,10 @@ spec:
         app: {{ .Release.Name }}-app
         version: v1
     spec:
+      {{- if .Values.app.imagePullSecret }}
       imagePullSecrets:
         - name: {{ .Values.app.imagePullSecret }}
+      {{- end }}
       nodeSelector:
         node-role: {{ .Values.app.v1.nodeSelector.role }}
         kubernetes.io/hostname: {{ .Values.app.v1.nodeSelector.hostname }}

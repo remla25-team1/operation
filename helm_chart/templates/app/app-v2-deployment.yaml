@@ -17,11 +17,13 @@ spec:
         app: {{ .Release.Name }}-app
         version: v2
     spec:
+      {{- if .Values.app.imagePullSecret }}
       imagePullSecrets:
         - name: {{ .Values.app.imagePullSecret }}
+      {{- end }}
       nodeSelector:
-        node-role: {{ .Values.app.v2.nodeSelector.role }}
-        kubernetes.io/hostname: {{ .Values.app.v2.nodeSelector.hostname }}
+        node-role: {{ .Values.app.v1.nodeSelector.role }}
+        kubernetes.io/hostname: {{ .Values.app.v1.nodeSelector.hostname }}
       containers:
         - name: app
           image: "{{ .Values.app.image.repository }}:{{ .Values.app.v2.image.tag }}"
