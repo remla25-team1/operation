@@ -16,14 +16,18 @@ Each component can be developed, tested, and deployed independently, yet they fo
 ## Contents
 
 - [Use-Case](#use-case-tweet-sentiment-analysis)
-- [Setup](#setup)
-- [Running Application on Kubernetes Cluster](#running-application-on-kubernetes-cluster)
+- [Prerequisites](#prerequisites)
+- [Running the App on Kubernetes Cluster](#running-the-app-on-kubernetes-cluster)
+  - [How to Run](#how-to-run)
+  - [Accessing the Kubernetes Dashboard](#accessing-the-kubernetes-dashboard)
   - [Useful Commands](#useful-commands)
-- [Verify Prometheus Setup](#verify-prometheus-setup)
-- [Grafana](#grafana)
-  - [Auto-load via ConfigMap](#auto-load-via-configmap)
-  - [Import the Dashboard Manually](#import-the-dashboard-manually)
-- [Testing Istio](#testing-istio)
+- [Monitoring](#monitoring)
+  - [Verify Prometheus Setup](#verify-prometheus-setup)
+  - [Grafana](#grafana)
+- [Traffic Management](#traffic-management)
+  - [Testing Istio](#testing-istio)
+  - [Additional Use Case for Istio](#additional-use-case-for-istio)
+- [Documentation](#documentation)
 - [Running the App with Docker Compose](#running-the-app-with-docker-compose)
 
 ---
@@ -43,7 +47,7 @@ Our application features a simple interface where users can enter a tweet to ana
 
 ---
 
-## Setup Instruction
+## Prerequisites
 
 ### 1. Install Required Tools
 
@@ -53,7 +57,7 @@ Before getting started, ensure the following tools are installed on your system:
 - [Ansible](https://docs.ansible.com/ansible/latest/installation_guide/index.html)
 - [Kubectl](https://kubernetes.io/docs/tasks/tools/)
 - [Helm](https://helm.sh/docs/intro/install/)
-- [yq: command-line YAML processor safer than awk, sed, and grep](https://github.com/mikefarah/yq)
+- [yq](https://github.com/mikefarah/yq)
 
 ### 2. SSH Key Setup
 
@@ -80,27 +84,36 @@ cp ~/.ssh/id_rsa.pub ssh_keys/id_rsa.pub
 
 ---
 
-### Running Application on Kubernetes Cluster
+## Running the App on Kubernetes Cluster
 
-Navigate into ```operation``` dir and run the commands below:
+### How to Run
+
+From the root of the ```operation``` dir run the following commands:
 ```bash
 chmod +x run-all.sh
 ./run-all.sh
 ```
 
-
 This will set up all services. The script takes a good while to run, so take your time. 
 
-##### PAT token access
-During step 3 of the process (indicated in the terminal), you will be asked for your Github username, PAT token, and Github email address. This is so that you can pull the latest images to deploy on the cluster. Set up a `imagePullSecrets` for GHCR: first generate a new token (classic) on Github. Give it scopes `read:packages, repo, org:read`. Copy the token and paste it in the PAT token space. Note: you will need to request access to the organization before you can pull build images like this.
+#### PAT token access
 
-Alternatively, you can use our bot-account to run the cluster. During step 3, use the following credentials:
+During step 3 of the process (indicated in the terminal), you will be asked for your Github username, PAT token, and Github email address. This is so that you can pull the latest images to deploy on the cluster. 
+
+**Alternative 1:** 
+Set up a `imagePullSecrets` for GHCR: first generate a new token (classic) on Github. Give it scopes `read:packages, repo, org:read`. Copy the token and paste it in the PAT token space. Note: you will need to request access to the organization before you can pull build images like this.
+
+**Alternative 2:** 
+You can use our bot-account to run the cluster. For grading purposes, the PAT of the bot-account has been added to the ZIP under the name `grading_credentials/PAT.txt`. During step 3, use the following credentials:
 - Github username: **remla-git-bot**
+- GitHub Personal Access Token: **Insert PAT from PAT.txt**
 - Github email: anna.visman@gmail.com (will be swapped for a different email in the future)
-- PAT token: **please contact the organization owner to receive this token**
 
-##### BECOME password
+#### BECOME password
+
 Afterwards, you will be asked for your `BECOME` password. This is so that the playbook can run commands in `sudo` mode. Simply fill in your host password here.
+
+#### Final Steps
 
 At the end of the script, you will be asked to execute the following command, so that you can execute ```kubectl``` commands in the terminal:
 ```bash
@@ -111,18 +124,31 @@ echo $KUBECONFIG
 
 NOTE: for any new shell you spawn, you need to repeat this exporting of the ```KUBECONFIG``` variable.
 
+You should now be able to access the application at: ```http://192.168.56.91:80/```
 
-If you want to upgrade the service to adapt any changes, just rerun
+If you want to upgrade the service to adapt any changes, just rerun:
 
 ```bash
 ./run-all.sh
 ```
 
-When you are finished, tear down the cluster with
+#### Cleanup
+
+When you are finished, tear down the cluster with:
 ```bash
 chmod +x cleanup.sh
 ./cleanup.sh
 ```
+
+#### Provisioning Time
+
+After `step1` of the `run-all.sh` script the provisioning time will be displayed in the terminal.
+
+Provisioning runs below 5 mins (on Mac M1 Chip 16GB and Dell XPS Intel 62GB).
+
+![alt text](docs/images/prov_time.png)
+
+---
 
 ### Accessing the Kubernetes Dashboard
 
@@ -139,7 +165,6 @@ Navigate to the following URL in your web browser:
 
 [https://dashboard.local](https://dashboard.local)
 
-
 To log in, you need an authentication token. Run the following command in your terminal (where you have `KUBECONFIG` set up) to generate a token for the `admin-user`:
 
 ```bash
@@ -150,57 +175,27 @@ Copy the entire token output from the command above to login.
 Then you should see the following dashboard.
 ![Kubernetes Dashboard Login](docs/images/k8s-dashboard.png)
 
+---
 
+### Useful Commands
 
-#### Useful Commands
-
-These commands can help you debug, manage, and restart your application components more effectively during development or deployment.
+These commands can help you debug and manage your application components more effectively during development or deployment.
 
 - Inspect resources:
 ```bash
 kubectl describe ingress sentiment-app-ingress
-kubectl get sentiment-app
-kubectl get endpoints sentiment-app
+kubectl get sentiment-app-app
+kubectl get endpoints sentiment-app-app
 ```
-
-- Triger a rollout restart:
-```bash
-kubectl rollout restart deployment app
-kubectl rollout restart deployment model-service
-```
-
-- Deleting existing pods manually (only safe if the app is stateless):
-```bash
-kubectl delete pods --all
-kubectl delete pods -l app=app
-kubectl delete pods -l app=model-service
-``` 
 
 - Inspecting all config maps installed in the cluster:
 ```bash
 kubectl get configmaps
 ```
 
-- Pushing new Docker image of a repo so that it can be deployed on the running cluster (```app``` example):
-```bash
-docker build -t ghcr.io/remla25-team1/app:latest .
-echo YOUR_TOKEN_HERE | docker login ghcr.io -u YOUR_GITHUB_USERNAME --password-stdin
- # this requires you to have a GHCR token for writing packages (you might want to store it too)
-docker push ghcr.io/remla25-team1/app:latest 
-
-# trigger a Deployment restart to pull the new image (ssh into ctrl node!)
-kubectl rollout restart deployment app
-#deployment.apps/app restarted
-
-# check the rollout status
-kubectl rollout status deployment app
-# deployment "app" successfully rolled out
-
-# confirm that the new pod is running (below, you can see the age difference)
-kubectl get pods -o wide
-```
-
 ---
+
+## Monitoring
 
 ### Verify Prometheus Setup
 
@@ -258,7 +253,7 @@ kubectl port-forward -n monitoring svc/prometheus-kube-prometheus-prometheus 909
 Then open your browser and visit:
 [http://localhost:9090](http://localhost:9090)
 
-Look for the custom alert "HighRequestRate" in the list. If it's correctly configured and active, it will appear as Inactive, Pending or Firing.
+Look for the custom alert "HighRequestRate" in the list. If it's correctly configured and active, it will appear as `Inactive`, `Pending` or `Firing`.
 
 #### 4. Trigger the Alert by Generating Traffic
 
@@ -272,6 +267,8 @@ This generates approximately 10 requests per second, which is well above the thr
 
 In the Prometheus UI under **Alerts**, verify that the alert transitions from **Pending** to **Firing** after approximately 2m. 
 
+![alt text](docs/images/alert.png)
+
 Check the Alertmanager UI to confirm that it received and processed the alert:
 
 ```bash
@@ -280,6 +277,8 @@ kubectl port-forward -n monitoring svc/alertmanager-operated 9093
 
 Then visit: [http://localhost:9093](http://localhost:9093).
 You should see the alert listed there.
+
+![alt text](docs/images/alertUI.png)
 
 ---
 
@@ -304,7 +303,7 @@ Then, open your browser and visit: [http://localhost:3000](http://localhost:3000
 
 The `sentiment-app` dashboard is automatically provisioned and available. You can find it by navigating to **Dashboards** in the left-hand menu.
 
-![Grafana Dashboard Screenshot](docs/images/grafana-dashboard.png)
+![Grafana Dashboard Screenshot](docs/images/grafana_dashboard.png)
 
 #### 3. Dashboard Panels Overview
 
@@ -317,22 +316,24 @@ The dashboard includes several key panels to monitor application health and perf
 - **Requests Under Latency Threshold:** Tracks the percentage of requests that meet a configurable performance goal (e.g., completed in under 0.2s).
 - **Sentiment Request Volume:** A time-series graph showing the total number of `/sentiment` requests.
 
-For a detailed breakdown of each panel, its purpose, and the underlying Prometheus queries, please see [grafana.md](docs/grafana.md).
+In order to see some metrics, interact with the FE at: ```http://192.168.56.91:80/```
 
+For a detailed breakdown of each panel, its purpose, and the underlying Prometheus queries, please see [grafana.md](docs/grafana.md).
 
 ---
 
-### Traffic Management
+## Traffic Management
+
 We managed to do a 90/10 routing of 2 kinds of apps.
 
+### Testing Istio
 
-#### Testing Istio
 The cluster is configured with Istio in the ```migrate.yaml``` playbook which you ran above. To test the Istio traffic management functionality, you can try the following two tests:
 ```bash
 # find the INGRES-IP (external ip below)
 kubectl -n istio-system get svc istio-ingressgateway
-# NAME                   TYPE           CLUSTER-IP     EXTERNAL-IP     PORT(S)                                                                      AGE
-# istio-ingressgateway   LoadBalancer   10.98.33.145   192.168.56.91   15021:32752/TCP,80:31897/TCP,443:31145/TCP,31400:30170/TCP,15443:31601/TCP   18m
+# NAME                   TYPE           CLUSTER-IP       EXTERNAL-IP     PORT(S)                                                                      AGE
+# istio-ingressgateway   LoadBalancer   10.111.109.227   192.168.56.91   15021:32284/TCP,80:32610/TCP,443:31815/TCP,31400:30835/TCP,15443:30177/TCP   43m
 
 # testing sticky sessions
 for i in {1..10}; do
@@ -344,7 +345,10 @@ curl -H "user-group: canary" http://<INGRESS_IP>/
 ```
 
 ### Additional Use Case for Istio
+
 We implemented local rate limiting, so each individual client can make up to 100 requests per minute. This is to prevent hogging of the network by an individual client. 
+
+## Documentation
 
 ### 👉 [Continuous Experiments](docs/continuous-experimentation.md)
 
